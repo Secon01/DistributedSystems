@@ -2,6 +2,7 @@ import java.rmi.Naming;
 
 public class Master 
 {
+    static int y = 5;
     static int x ; 
     static void func(int y) 
     {
