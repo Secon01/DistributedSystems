@@ -6,7 +6,7 @@ public class Master
     void func(int y) 
     {
         x = 3;
-        System.out.println(x + y);
+        System.out.println(x - y);
     }
     public static void main(String[] args) {
         String answer, value = "Sotiris";
