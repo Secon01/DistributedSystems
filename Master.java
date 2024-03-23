@@ -2,8 +2,8 @@ import java.rmi.Naming;
 
 public class Master 
 {
-    int x ; 
-    void func(int y) 
+    static int x ; 
+    static void func(int y) 
     {
         x = 3;
         System.out.println(x + y);
@@ -19,5 +19,10 @@ public class Master
         } catch (Exception e) {
             System.out.println(e);
         }
+
+        func(3);
+        
     }
+
+
 }
