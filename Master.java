@@ -2,6 +2,7 @@ import java.rmi.Naming;
 
 public class Master 
 {
+    int x ; 
     public static void main(String[] args) {
         String answer, value = "Sotiris";
         try 
