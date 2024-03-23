@@ -3,6 +3,11 @@ import java.rmi.Naming;
 public class Master 
 {
     int x ; 
+    void func(int y) 
+    {
+        x = 3;
+        System.out.println(x + y);
+    }
     public static void main(String[] args) {
         String answer, value = "Sotiris";
         try 
