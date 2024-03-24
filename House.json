@@ -1,6 +1,7 @@
 {"RoomName" : "Villa",
-"area":5,
-"stars":4,
-"noOfReviews":15
+"Date": "2024-03-24",
+"GuestNum":3,
+"Price":60.00,
+"Stars":4
 }
 
