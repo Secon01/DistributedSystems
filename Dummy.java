@@ -67,7 +67,6 @@ public class Dummy
             case 1:                                                         // area input 
                 System.out.println("Enter area's name");
                 filter.setArea(sc.nextLine());
-                //System.out.println(filter.getArea() + "!!!");
                 break;
             case 2:                                                         // date input
                 System.out.println("Enter a date");
@@ -87,55 +86,19 @@ public class Dummy
                 break;
             case 6:
                 System.out.println("Your results are: ");
-                System.out.println(filter.area);
-                System.out.println(filter.date);
-                System.out.println("Guests: "+ filter.guests);
-                System.out.println("Price: " + filter.price);
-                System.out.println("Stars: " +filter.stars);
+                System.out.println(filter.getArea());
+                System.out.println(filter.getDate());
+                System.out.println("Guests: "+ filter.getGuests());
+                System.out.println("Price: " + filter.getPrice());
+                System.out.println("Stars: " +filter.getStars());
                 break;
             default:
                 System.out.println("An unknown error has occured!");
                 break;
         }
     }
-    // Filters holder
-    public class Filter 
-    {
-        private String area;
-        private String date;
-        private int guests;
-        private int price;
-        private int stars;
-
-        // Setters for filter attributes
-        public void setArea(String a)
-        {
-            this.area = a;
-        }
-
-        public void setDate(String d)
-        {
-            this.date = d;
-        }
-
-        public void setGuests(int g)
-        {
-            this.guests = g;
-        }
-
-        public void setPrice(int p)
-        {
-            this.price = p;
-        }
-
-        public void setStars(int s)
-        {
-            this.stars = s;
-        }
-    }
     public static void main(String[] args) {
         Dummy dummyApp = new Dummy();
         dummyApp.runMenu();
-        
     }    
 }
