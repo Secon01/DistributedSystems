@@ -4,6 +4,7 @@ public class Room
     int guests;
     String area;
     int stars;
+    int lego;
     int reviews;
     double price;
 
