@@ -1,5 +1,6 @@
 public class Room
 {
+    int id;
     String name;
     int guests;
     String area;
@@ -9,8 +10,9 @@ public class Room
     double price;
 
     // Room constructor
-    Room(String n, int g, String a, int s, int r, double p)
+    Room(int i, String n, int g, String a, int s, int r, double p)
     {
+        this.id = i;
         this.name = n;
         this.guests = g;
         this.area = a;
@@ -20,6 +22,10 @@ public class Room
     }
 
     // Setters
+    public void setId(int id) {
+        this.id = id;
+    }
+
     public void setName(String name) {
         this.name = name;
     }
@@ -45,6 +51,10 @@ public class Room
     }
 
     // Getters
+    public int getId() {
+        return id;
+    }
+    
     public String getName() {
         return name;
     }
@@ -67,5 +77,16 @@ public class Room
 
     public double getPrice() {
         return price;
+    }
+
+    // Prints out room's information all together
+    public void getAll()
+    {
+        System.out.println("Name: " + this.name);
+        System.out.println("Guests: " + this.guests);
+        System.out.println("Area: " + this.area);
+        System.out.println("Stars " + this.stars);
+        System.out.println("Reviews: " + this.reviews);
+        System.out.println("Price: " + this.price);
     }
 }   
