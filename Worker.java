@@ -9,6 +9,13 @@ public class Worker extends Thread
     {
         synchronized(rooms) {
             rooms.add(room);        // add room to array
+            System.out.println(room.getId() + " added to array");
+            //rooms.notify();
+            //try {
+            //    rooms.wait();       // wait for worker to add room to array
+            //} catch (Exception e) {
+            //    e.printStackTrace();
+            //}
         }
     }
 
