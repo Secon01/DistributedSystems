@@ -1,3 +1,4 @@
+package ds;
 // Dummy App for users
 
 import java.util.Scanner;
