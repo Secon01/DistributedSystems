@@ -1,0 +1,8 @@
+{
+ "name" : "Villa",
+ "guests" : 3,
+ "area" : "Lamia",
+ "stars" : 4,
+ "reviews" : 15,
+ "price" : 60.0
+}

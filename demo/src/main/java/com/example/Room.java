@@ -1,3 +1,5 @@
+package com.example;
+
 public class Room
 {
     int id;
@@ -87,5 +89,16 @@ public class Room
         System.out.println("Stars " + this.stars);
         System.out.println("Reviews: " + this.reviews);
         System.out.println("Price: " + this.price);
+    }
+
+    @Override
+    public String toString()
+    {
+        return "Room [name = " + name +
+                ", guests = " + guests +
+                ", area = " + area +
+                ", stars = " + stars +
+                ", reviews = " + reviews +
+                ", price = " + price + "]";
     }
 }   
