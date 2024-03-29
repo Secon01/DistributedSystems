@@ -1,7 +1,5 @@
 import java.util.ArrayList;
 
-import com.example.Room;
-
 public class Worker extends Thread
 {
     ArrayList<Room> rooms;      // Rooms array
