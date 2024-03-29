@@ -11,9 +11,9 @@ public class JsonConverter
 {
     public static void main(String[] args) {
         // Convert an object room to JSON
-        Room room = new Room(0, "Villa 1", 2, "New York", 3, 10, 70.00);
+        //Room room = new Room(0, "Villa 1", 2, "New York", 3, 10, 70.00);
         System.out.println("Json representation of Object room is " );
-        System.out.println(new Gson().toJson(room));
+        //System.out.println(new Gson().toJson(room));
 
         System.out.println();
 

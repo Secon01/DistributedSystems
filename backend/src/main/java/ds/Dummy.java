@@ -19,7 +19,8 @@ public class Dummy
     // Menu
     public void menu()
     {
-        System.out.println("Please select a number for filtering or press 6 to continue");
+        System.out.println();
+        System.out.println("Please select a number for filtering or press 6 to continue for booking. If you want to exit press 0.");
         System.out.println(" 1) Area");
         System.out.println(" 2) Date");
         System.out.println(" 3) Number of guests");
@@ -92,6 +93,7 @@ public class Dummy
                 System.out.println("Guests: "+ filter.getGuests());
                 System.out.println("Price: " + filter.getPrice());
                 System.out.println("Stars: " +filter.getStars());
+                System.out.println("Number of filters: " + filter.numFilter());
                 break;
             default:
                 System.out.println("An unknown error has occured!");

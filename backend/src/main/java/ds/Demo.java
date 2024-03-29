@@ -1,9 +1,10 @@
 package ds;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
-
+/* 
 public class Demo 
 {
+    
     public static void main(String[] args) {
         Room room1 = new Room(0, "Villa 1", 2, "New York", 3, 10, 70.00);
         Room room2 = new Room(1, "Villa 2", 4, "Arizona", 4, 13, 100.00);
@@ -37,3 +38,4 @@ public class Demo
         }
     }    
 }
+ */

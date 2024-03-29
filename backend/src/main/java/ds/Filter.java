@@ -1,7 +1,11 @@
 package ds;
+
+import java.lang.reflect.Field;
+
 // Filters holder
-public class Filter extends Request
+public class Filter 
 {
+    private int id;
     private String area;
     private String date;
     private int guests;
@@ -9,6 +13,10 @@ public class Filter extends Request
     private int stars;
 
     // Setters for filter attributes
+    public void setId(int id) {
+        this.id = id;
+    }
+
     public void setArea(String a)
     {
         this.area = a;
@@ -35,6 +43,10 @@ public class Filter extends Request
     }
 
     // Getters
+    public int getId() {
+        return id;
+    }
+
     public String getArea() {
         return area;
     }
@@ -53,5 +65,25 @@ public class Filter extends Request
 
     public int getStars() {
         return stars;
+    }
+
+    // Computes how many non null or 0 values does this object has
+    public int numFilter()
+    {
+        int count = 0;
+        Field[] fields = this.getClass().getDeclaredFields();
+        for (Field field : fields) {
+            field.setAccessible(true);
+            try {
+                Object value = field.get(this);
+
+                if(value != null && !value.equals(0)) {
+                    count++;
+                }
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
+        return count;
     }
 }
