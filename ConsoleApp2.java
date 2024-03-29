@@ -5,8 +5,7 @@ import com.google.gson.Gson;
 import java.io.FileReader;
 import java.io.FileNotFoundException;
 
-public class ConsoleApp2 {
-
+public class ConsoleApp {
     boolean done;
     Scanner inp;
     Info information = new Info();
@@ -113,7 +112,7 @@ public class ConsoleApp2 {
 
     }
 
-    public class Room {
+  public class Room {
         private String roomName;
         private String date;
         private int guestNum;
@@ -200,7 +199,8 @@ public class ConsoleApp2 {
     }
 
     public static void main(String[] args) {
-        ConsoleApp2 insertion = new ConsoleApp2();
+
+        ConsoleApp insertion = new ConsoleApp();
         insertion.runMenu();
 
     }
