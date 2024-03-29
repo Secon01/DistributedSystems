@@ -1,29 +1,27 @@
-import java.rmi.Naming;
+import java.util.ArrayList;
 
-public class Master 
+// Master class
+public class Master extends Thread
 {
-    static int y = 5;
-    static int x ; 
-    static void func(int y) 
+    ArrayList<Worker> workers = new ArrayList<>();  // Array list of workers
+    // Master constructor
+    Master(int request)
     {
-        x = 3;
-        System.out.println(x - y);
+        for(int i =0; i < request; i++)             // for loop to create as many workers as the incoming requests
+        {    
+            //workers.add(new Worker("Worker " + i));
+        }
+    }
+
+    // Method for master's work
+    public void run()
+    {
+
     }
     public static void main(String[] args) {
-        String answer, value = "Sotiris";
-        try 
-        {
-            Print access = (Print)Naming.lookup("rmi://localhost:1900" + "/secon");    
-            answer = access.printStr(value);
-
-            System.out.println(answer);
-        } catch (Exception e) {
-            System.out.println(e);
+        Master m = new Master(11);
+        for (Worker w : m.workers) {                // print out workers
+            System.out.println(w.getName());
         }
-
-        func(3);
-        
     }
-
-
 }
