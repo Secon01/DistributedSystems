@@ -5,6 +5,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+int r;
 public class Client 
 {
     public static void main(String[] args) throws IOException {
