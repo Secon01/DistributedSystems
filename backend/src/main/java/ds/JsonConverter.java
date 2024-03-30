@@ -18,7 +18,7 @@ public class JsonConverter
         System.out.println();
 
         // Convert a JSON to an object room
-        String filePath = "/home/secon/Documents/GitHub/DistributedSystems/Room1.json";
+        String filePath = "/home/secon/Documents/GitHub/DistributedSystems/Room.json";
         try {
             String jsonString = JsonUtils.readFileToString(filePath);       // convert file path of json to string
             if(jsonString != null) {
@@ -28,6 +28,7 @@ public class JsonConverter
                 Gson gson = new Gson();
                 Room r = gson.fromJson(jsonString, Room.class);
                 System.out.println("Object created from JSON: " + r);
+                System.out.println(r.getArea());
             } else {
                 System.out.println("Failed to read the JSON file.");
             }

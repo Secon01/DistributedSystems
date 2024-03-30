@@ -1,8 +1,7 @@
 package ds;
 // Room Class
-public class Room 
+public class Room extends Request
 {
-    private int id;
     private String roomName;
     private String date;
     private int guests;
@@ -13,9 +12,8 @@ public class Room
     private String roomImage;
 
     // Constructor
-    Room(int id, String name, String date, int guests, double price, int stars, String area, int reviews, String image)
+    Room(String name, String date, int guests, double price, int stars, String area, int reviews, String image)
     {
-        this.id = id;
         this.roomName = name;
         this.date = date;
         this.guests = guests;
@@ -26,12 +24,12 @@ public class Room
         this.roomImage = image;
     }
 
-    // Getters
-    public int getId()
+    Room()
     {
-        return id;
+
     }
 
+    // Getters
     public String getRoomName() {
         return roomName;
     }
@@ -65,11 +63,6 @@ public class Room
     }
 
     // Setters
-    public void setId(int id)
-    {
-        this.id = id;
-    }
-
     public void setRoomName(String roomName) {
         this.roomName = roomName;
     }
@@ -100,5 +93,12 @@ public class Room
 
     public void setRoomImage(String roomImage) {
         this.roomImage = roomImage;
+    }
+
+    // Copies this object to another
+    public Room copy()
+    {
+        return new Room(this.roomName, this.date, this.guests, this.price, 
+                        this.stars, this.area, this.reviews, this.roomImage);
     }
 }

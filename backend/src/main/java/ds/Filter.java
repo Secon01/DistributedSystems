@@ -3,20 +3,15 @@ package ds;
 import java.lang.reflect.Field;
 
 // Filters holder
-public class Filter 
+public class Filter extends Request
 {
-    private int id;
     private String area;
     private String date;
     private int guests;
-    private int price;
+    private double price;
     private int stars;
 
     // Setters for filter attributes
-    public void setId(int id) {
-        this.id = id;
-    }
-
     public void setArea(String a)
     {
         this.area = a;
@@ -32,7 +27,7 @@ public class Filter
         this.guests = g;
     }
 
-    public void setPrice(int p)
+    public void setPrice(double p)
     {
         this.price = p;
     }
@@ -43,10 +38,6 @@ public class Filter
     }
 
     // Getters
-    public int getId() {
-        return id;
-    }
-
     public String getArea() {
         return area;
     }
@@ -59,7 +50,7 @@ public class Filter
         return guests;
     }
 
-    public int getPrice() {
+    public double getPrice() {
         return price;
     }
 
