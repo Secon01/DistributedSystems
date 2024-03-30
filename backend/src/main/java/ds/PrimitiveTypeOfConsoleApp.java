@@ -1,9 +1,7 @@
-import java.time.LocalDate;
-import java.sql.Date;
+package ds;
 import java.util.Scanner;
-import java.time.format.DateTimeFormatter;
 
-public class ConsoleApp {
+public class PrimitiveTypeOfConsoleApp {
 
     boolean done;
     Scanner inp;
@@ -103,7 +101,7 @@ public class ConsoleApp {
     }
 
     public static void main(String[] args) {
-        ConsoleApp insertion = new ConsoleApp();
+        PrimitiveTypeOfConsoleApp insertion = new PrimitiveTypeOfConsoleApp();
         insertion.runMenu();
 
     }

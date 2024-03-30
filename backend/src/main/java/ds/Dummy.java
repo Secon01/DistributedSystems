@@ -1,9 +1,12 @@
 package ds;
 // Dummy App for users
 
+import java.io.IOException;
 import java.util.Scanner;
 
-public class Dummy 
+import ds.JsonConverter.JsonUtils;
+
+public class Dummy extends Thread
 {
     boolean exit;                                           // exit menu
     Scanner sc;                                             // scanner 
@@ -19,7 +22,8 @@ public class Dummy
     // Menu
     public void menu()
     {
-        System.out.println("Please select a number for filtering or press 6 to continue");
+        System.out.println();
+        System.out.println("Please select a number for filtering or press 6 to continue for booking. If you want to exit press 0.");
         System.out.println(" 1) Area");
         System.out.println(" 2) Date");
         System.out.println(" 3) Number of guests");
@@ -38,7 +42,6 @@ public class Dummy
             int choice = getInput();                        // get number input
             performAction(choice);                          // perform action according to choice
         }
-
     }
 
     // Getting user input
@@ -79,27 +82,38 @@ public class Dummy
                 break;
             case 4:                                                         // price input
                 System.out.println("Enter a price");
-                filter.setPrice(Integer.parseInt(sc.nextLine()));
+                filter.setPrice(Double.parseDouble(sc.nextLine()));
                 break;
             case 5:                                                         // number of stars input
                 System.out.println("Enter a number of stars");
                 filter.setStars(Integer.parseInt(sc.nextLine()));
                 break;
             case 6:
+            /* 
                 System.out.println("Your results are: ");
                 System.out.println(filter.getArea());
                 System.out.println(filter.getDate());
                 System.out.println("Guests: "+ filter.getGuests());
                 System.out.println("Price: " + filter.getPrice());
                 System.out.println("Stars: " +filter.getStars());
+                System.out.println("Number of filters: " + filter.numFilter());
+                break;
+            */
+                Master master = new Master(filter);
+                
                 break;
             default:
                 System.out.println("An unknown error has occured!");
                 break;
         }
     }
+
+    public void run()
+    {
+        runMenu();
+    }
+
     public static void main(String[] args) {
-        Dummy dummyApp = new Dummy();
-        dummyApp.runMenu();
+        new Dummy().start();
     }    
 }
