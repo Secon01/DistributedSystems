@@ -84,12 +84,14 @@ public class Worker extends Thread
                     System.out.println(propertyName + ":" + valueR + " DEBUG");
     
                     // Both values are not null or 0, compare them
-                    if (valueF != null && valueR != null && !valueF.equals(0) && !valueR.equals(0)) {
+                    if (valueF != null && valueR != null && !valueF.equals(0) && !valueR.equals(0) && 
+                        !valueF.equals(0.0) && !valueR.equals(0.0)) {
                         if (!valueF.equals(valueR)) {
                             System.out.println("NO MATCHES");
                             return false;   // properties are not equal
                         }
-                    } else if(valueF == null || valueR == null || valueF.equals(0) || valueR.equals(0)) {
+                    } else if(valueF == null || valueR == null || valueF.equals(0) || valueR.equals(0) || 
+                              valueF.equals(0.0) || valueR.equals(0.0)) {
                         continue;   // if some property of Room object or Filter object is null or 0
                     }
                 } catch (NoSuchFieldException | IllegalAccessException e) {
@@ -116,17 +118,5 @@ public class Worker extends Thread
     // Rooms array getter
     public ArrayList<Room> getRooms() {
         return rooms;
-    }
-
-    public static void main(String[] args)  {
-        // Json deserialize check
-        Worker worker = new Worker();
-        String jsonString = null;
-        try {
-            jsonString = JsonUtils.readFileToString("/home/secon/Documents/GitHub/DistributedSystems/Room.json");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }       // convert file path of json to string
-        worker.deserialize(jsonString);
     }
 }

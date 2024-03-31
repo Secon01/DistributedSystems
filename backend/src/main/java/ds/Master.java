@@ -25,7 +25,7 @@ public class Master
 
         String jsonString = null;
         try {
-            jsonString = JsonUtils.readFileToString("/home/secon/Documents/GitHub/DistributedSystems/Room.json");
+            jsonString = JsonUtils.readFileToString("C:/Users/sotir/DistributedSystems/Room.json");
         } catch (IOException e) {
             e.printStackTrace();
         }       // convert file path of json to string

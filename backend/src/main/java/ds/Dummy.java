@@ -1,10 +1,7 @@
 package ds;
 // Dummy App for users
 
-import java.io.IOException;
 import java.util.Scanner;
-
-import ds.JsonConverter.JsonUtils;
 
 public class Dummy extends Thread
 {
@@ -99,7 +96,7 @@ public class Dummy extends Thread
                 System.out.println("Number of filters: " + filter.numFilter());
                 break;
             */
-                Master master = new Master(filter);
+                new Master(filter);
                 
                 break;
             default:
