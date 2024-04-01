@@ -115,7 +115,6 @@ public class Master
         private String ipAddress;       // worker's ip address
         private int port;               // worker's port
 
-<<<<<<< HEAD
         public String toString() 
         {
             return "Worker: " + workerID + 
@@ -134,22 +133,6 @@ public class Master
                     "nofWorkers=" + nofWorkers +
                     ", workers=" + workers;
         }
-=======
-        String jsonString = null;
-        try {
-            jsonString = JsonUtils.readFileToString("C:/Users/sotir/DistributedSystems/Room.json");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }       // convert file path of json to string
-        Room roomNY = worker.deserialize(jsonString);
-        worker.getRooms().add(roomNY);
-        worker.start();
-        /* 
-        The proper initialization of worker and run 
-        //worker = new Worker(filter);
-        //worker.start();
-        */
->>>>>>> 9de739c93bc668fc2a6932f2c5daa818f788e589
     }
 
     // Main method

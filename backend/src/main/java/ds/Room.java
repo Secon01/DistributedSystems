@@ -101,4 +101,10 @@ public class Room extends Request
         return new Room(this.roomName, this.date, this.guests, this.price, 
                         this.stars, this.area, this.reviews, this.roomImage);
     }
+
+    public String toString()
+    {
+        return "[" + this.roomName + ", " + this.date + ", " + this.guests + ", " + this.price + ", " + this.stars + ", "
+                    + this.area + ", " + this.reviews + ", " + this.roomImage + "]";
+    }
 }

@@ -77,4 +77,10 @@ public class Filter extends Request
         }
         return count;
     }
+
+    public String toString()
+    {
+        return "[" + this.area + ", " + this.date + ", " + this.guests + 
+                ", " + this.price + ", " + this.stars + "]";
+    }
 }
