@@ -11,4 +11,9 @@ public class Reducer
     {
         results = new ArrayList<>();    // array initialization
     }
+
+    public ArrayList<Room> reduce()
+    {
+        return results;
+    }
 }

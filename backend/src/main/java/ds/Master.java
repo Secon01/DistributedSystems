@@ -5,19 +5,21 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import ds.JsonConverter.JsonUtils;
 import com.google.gson.Gson;
 
-public class Master 
+public class Master extends Thread
 {
     private static int requestID = 0;           // id for request
-    public static WorkerConfig workerConfig;  // workers configuration instance
-    private ServerSocket serverSocket;
-	private Socket socket = null;
-    private static int port = 8000;
+    public static WorkerConfig workerConfig;    // workers configuration instance
+    private ServerSocket serverSocket;          // server socker 
+	private static Socket socket = null;               // set socket null
+    private static int port = 8000;             // set port of master
+    private static String hostname = "localhost";              // host name      
     // Master constructor
     Master()
     {
@@ -31,19 +33,19 @@ public class Master
     // Opens master's server side
     private void openServer() throws IOException
     {
-		serverSocket = new ServerSocket(port, 10);
-        System.out.println("Master is listening on port " + port);
+		serverSocket = new ServerSocket(port, 10);                                                          // create socket
+        System.out.println("Master is listening on port " + port);      
 
 		while (true) {
 			socket = serverSocket.accept();
             System.out.println(socket.getInputStream());
-            BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream()));   //get input stream in buffered reader
-            OutputStream output = socket.getOutputStream();    // get output stream from master's socket
+            BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream()));      // get input stream in buffered reader
+            OutputStream output = socket.getOutputStream();                                                 // get output stream from master's socket
 
-            String requestLine = input.readLine();             // set request line 
+            String requestLine = input.readLine();                                                          // set request line 
             if (requestLine == null || requestLine.isEmpty()) continue;
-
-            if (requestLine.startsWith("POST /newRoom")) {
+            // Header check
+            if (requestLine.startsWith("POST /newRoom")) {               
                 System.out.println("Received new room request...");
                 handleNewRoomRequest(input, output);
             } else if (requestLine.startsWith("POST /searchRoom")) {
@@ -53,21 +55,32 @@ public class Master
                 sendNotImplementedResponse(output);
             }
             consumeRemainingRequest(input);
+            socket.close();                                                                                 // close socket
 		}
+    }
+
+    // Opens client side of master and sends request for searching room
+    private static void openClient(String json, int workerPort) throws IOException
+    {
+        Socket socket = new Socket(hostname, workerPort);                                                   // open socket to worker's port
+        PrintWriter output = new PrintWriter(socket.getOutputStream(), true);                               // set output
+        sendSearchRoomRequest(output, json);                                                                // send request
+        socket.close();                                                                                     // close socket
     }
 
     // Handles requests for new room insertion
     private static void handleNewRoomRequest(BufferedReader in, OutputStream out) throws IOException {
-        StringBuilder requestBody = new StringBuilder();    // build the body of request into string
+        StringBuilder requestBody = new StringBuilder();                                                    // build the body of request into string
         String roomJson;
         while (!(roomJson = in.readLine()).isEmpty()) {
             requestBody.append(roomJson);
         }
-        Room room = new Gson().fromJson(roomJson, Room.class);  // create room object from json input file
+        Room room = new Gson().fromJson(roomJson, Room.class);                                      // create room object from json input file
         System.out.println(room.toString());
 
         System.out.println("Received new room data: " + requestBody);
-        sendHttpResponse(out, 200, "OK", "{\"message\":\"New room added\"}", "application/json");
+        sendHttpResponse(out, 200, "OK", "{\"message\":\"New room added\"}"
+                            , "application/json");                                              // send response for succesfull http request
         System.out.println("Room added...");
     }
 
@@ -78,17 +91,32 @@ public class Master
         while (!(filterJson = in.readLine()).isEmpty()) {
             requestBody.append(filterJson);
         }
-        filterJson = in.readLine().repeat(1);   // repeat readline() one time in order to read json body
+        filterJson = in.readLine().repeat(1);                                                                // repeat readline() one time in order to read json body
         System.out.println(filterJson);
-        Filter filter = new Gson().fromJson(filterJson, Filter.class);  // create filter object from json input file
-        System.out.println("->-> " + filter.toString());
-
+        //Filter filter = new Gson().fromJson(filterJson, Filter.class);                                     // create filter object from json input file
+        //System.out.println("->-> " + filter.toString());
+        
+        for(Worker worker : workerConfig.workers) {             // for each worker condfigured 
+            openClient(filterJson, worker.port);                // open a socket to worker's port and send filter in json form
+        }
+        
         System.out.println("Received filter data: " + requestBody);
-        sendHttpResponse(out, 200, "OK", "{\"message\":\"New room added\"}", "application/json");
+        sendHttpResponse(out, 200, "OK", "{\"message\":\"New room added\"}"
+                        , "application/json");                                                   // send response for succesfull http request
         System.out.println("Room added...");
     }
-    
 
+    // Sends http request to worker
+    private static void sendSearchRoomRequest(PrintWriter out, String jsonBody) {
+        out.println("POST /searchRoom HTTP/1.1");
+        out.println("Host: localhost");
+        out.println("Content-Type: application/json");
+        out.println("Content-Length: " + jsonBody.length());
+        out.println("Connection: close");
+        out.println();
+        out.println(jsonBody);
+    }
+    
     // Sends error message when the server is incapable of performing the request
     private static void sendNotImplementedResponse(OutputStream out) throws IOException {
         sendHttpResponse(out, 501, "Not Implemented", "", "text/plain");
@@ -98,7 +126,7 @@ public class Master
     private static void sendHttpResponse(OutputStream out, int statusCode, String statusMessage, String body, String contentType) throws IOException {
         String httpResponse = String.format("HTTP/1.1 %d %s\r\nContent-Type: %s\r\nContent-Length: %d\r\n\r\n%s", statusCode, statusMessage, 
                                             contentType, body.getBytes().length, body); // format of http header
-        System.out.println(httpResponse);   
+        //System.out.println(httpResponse);   
         out.write(httpResponse.getBytes());
     }
 

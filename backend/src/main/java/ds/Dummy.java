@@ -1,5 +1,5 @@
-package ds;
 // Dummy App for users
+// Communication protocol is based on HTTP
 package ds;
 
 import java.io.BufferedReader;
@@ -8,14 +8,16 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Scanner;
+import com.google.gson.Gson;
 
 public class Dummy extends Thread {
    private boolean exit;
    private Scanner sc;
    private Filter filter;
-   private String hostname = "localhost";
-   private int port = 8000;
+   private static String hostname = "localhost";
+   private static int port = 8000;
    static String[] inputArgs;
+   public static String input;
 
    public void header() {
       System.out.println("+----------------------------+");
@@ -95,121 +97,67 @@ public class Dummy extends Thread {
 
    }
 
-   public void run() {
-      Socket socket = null;
-
-      try {
-         socket = new Socket(this.hostname, this.port);
-      } catch (IOException var41) {
-         var41.printStackTrace();
-      }
-
-      try {
-         try {
-            Throwable var2 = null;
-            Object var3 = null;
-
+   public void run() 
+   {
+        Socket socket = null;
+        try {
+            socket = new Socket(hostname, port);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try (PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+        BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+        if (input.equals("searchRoom")){
+            sendSearchRoomRequest(out);
+        } else {
+            System.out.println("Unknown command. Use 'getRoom' or 'newRoom'.");
+            sc.close();                 // close scanner
+            return;
+        }
+        // Read the response
+        //String responseLine;
+        //while ((responseLine = in.readLine()) != null) {
+        //    System.out.println(responseLine);
+        //}    
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
             try {
-               PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-
-               label587: {
-                  try {
-                     BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-
-                     try {
-                        if (inputArgs.length > 0 && inputArgs[0].equals("searchRoom")) {
-                           sendSearchRoomRequest(out);
-
-                           while(true) {
-                              String responseLine;
-                              if ((responseLine = in.readLine()) == null) {
-                                 break label587;
-                              }
-
-                              System.out.println(responseLine);
-                           }
-                        }
-
-                        System.out.println("Unknown command. Use 'getRoom' or 'newRoom'.");
-                     } finally {
-                        if (in != null) {
-                           in.close();
-                        }
-
-                     }
-                  } catch (Throwable var43) {
-                     if (var2 == null) {
-                        var2 = var43;
-                     } else if (var2 != var43) {
-                        var2.addSuppressed(var43);
-                     }
-
-                     if (out != null) {
-                        out.close();
-                     }
-
-                     throw var2;
-                  }
-
-                  if (out != null) {
-                     out.close();
-                  }
-
-                  return;
-               }
-
-               if (out != null) {
-                  out.close();
-                  return;
-               }
-            } catch (Throwable var44) {
-               if (var2 == null) {
-                  var2 = var44;
-               } else if (var2 != var44) {
-                  var2.addSuppressed(var44);
-               }
-
-               throw var2;
+                socket.close();             // close socket
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-         } catch (IOException var45) {
-            var45.printStackTrace();
-         }
-
-      } finally {
-         try {
-            socket.close();
-         } catch (IOException var40) {
-            var40.printStackTrace();
-         }
-
-      }
+        }         
    }
 
-   private static void sendSearchRoomRequest(PrintWriter out) {
-      String jsonBody = "{\"roomName\":\"Standard\",\"noOfPersons\":3,\"area\":\"Suburbs\",\"stars\":3,\"noOfReviews\":50,\"roomImage\":\"/images/standard.png\"}";
-      out.println("POST /newRoom HTTP/1.1");
-      out.println("Host: localhost");
-      out.println("Content-Type: application/json");
-      out.println("Content-Length: " + jsonBody.length());
-      out.println("Connection: close");
-      out.println();
-      out.println(jsonBody);
+   private void sendSearchRoomRequest(PrintWriter out) {
+        String jsonBody = new Gson().toJson(filter);
+        out.println("POST /searchRoom HTTP/1.1");
+        out.println("Host: localhost");
+        out.println("Content-Type: application/json");
+        out.println("Content-Length: " + jsonBody.length());
+        out.println("Connection: close");
+        out.println();
+        out.println(jsonBody);
    }
 
    Dummy(String area, String date, int guests, double price, int stars) {
-      this.filter = new Filter();
-      this.filter.setArea(area);
-      this.filter.setDate(date);
-      this.filter.setGuests(guests);
-      this.filter.setPrice(price);
-      this.filter.setStars(stars);
+        this.filter = new Filter();
+        this.filter.setArea(area);
+        this.filter.setDate(date);
+        this.filter.setGuests(guests);
+        this.filter.setPrice(price);
+        this.filter.setStars(stars);
    }
 
    Dummy() {
    }
 
-   public static void main(String[] args) {
-      (new Dummy("Lamia", (String)null, 0, 0.0, 0)).start();
-      (new Dummy("Larisa", "25-03-2024", 0, 0.0, 0)).start();
+   public static void main(String[] args) throws IOException {
+        Scanner sc = new Scanner(System.in);
+        System.out.println("Give input");
+        input = sc.nextLine();
+        (new Dummy("Lamia", (String)null, 0, 0.0, 0)).start();
+        (new Dummy("Larisa", "25-03-2024", 0, 0.0, 0)).start();
    }
 }
