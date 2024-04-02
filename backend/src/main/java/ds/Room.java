@@ -1,4 +1,7 @@
 package ds;
+
+import java.lang.reflect.Field;
+
 // Room Class
 public class Room extends Request
 {
@@ -115,7 +118,28 @@ public class Room extends Request
 
     public void setEndDate(String EndDate) {
         this.EndDate = EndDate;
-    }    
+    }
+    
+    // Computes how many non null or 0 values does this object has
+    public int numNonZero()
+    {
+        int count = 0;
+        Field[] fields = this.getClass().getDeclaredFields();
+        for (Field field : fields) {
+            field.setAccessible(true);
+            try {
+                Object value = field.get(this);
+
+                if(value != null && !value.equals(0) && !value.equals(0.0)) {
+                    count++;
+                }
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
+        return count;
+    }
+
     // Copies this object to another
     public Room copy()
     {

@@ -99,35 +99,37 @@ public class Dummy extends Thread {
 
    public void run() 
    {
-        Socket socket = null;
-        try {
-            socket = new Socket(hostname, port);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        try (PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-        BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
-        if (input.equals("searchRoom")){
-            sendSearchRoomRequest(out);
-        } else {
-            System.out.println("Unknown command. Use 'getRoom' or 'newRoom'.");
-            sc.close();                 // close scanner
-            return;
-        }
-        // Read the response
-        //String responseLine;
-        //while ((responseLine = in.readLine()) != null) {
-        //    System.out.println(responseLine);
-        //}    
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                socket.close();             // close socket
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }         
+      Socket socket = null;
+      try {
+         socket = new Socket(hostname, port);
+      } catch (IOException e) {
+         e.printStackTrace();
+      }
+      try (PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+      BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+      if (input.equals("searchRoom")){
+         sendSearchRoomRequest(out);
+      } else {
+         System.out.println("Unknown command. Use 'getRoom' or 'newRoom'.");
+         sc.close();                 // close scanner
+         return;
+      }
+      // Read the response
+      synchronized(in) {
+         String responseLine;
+         while ((responseLine = in.readLine()) != null) {
+               System.out.println(responseLine); 
+         }
+      }    
+      } catch (IOException e) {
+         e.printStackTrace();
+      } finally {
+         try {
+            socket.close();             // close socket
+         } catch (IOException e) {
+               e.printStackTrace();
+         }
+      }         
    }
 
    private void sendSearchRoomRequest(PrintWriter out) {
@@ -158,11 +160,14 @@ public class Dummy extends Thread {
         Scanner sc = new Scanner(System.in);
         System.out.println("Give input");
         input = sc.nextLine();
-        for(int i = 0; i < 10; i++) {
-            (new Dummy("Lamia", null, 0, 0.0, 0)).start();
-            
-        }
+        //for(int i = 0; i < 10; i++) {
+            (new Dummy("Larisa", null, 0, 0.0, 0)).start();
+            //(new Dummy("Larissa", null, 0, 0.0, 0)).start(); 
+         //(new Dummy("Larissa", null, 0, 0.0, 0)).start();   
+        //}
         //(new Dummy("Larisa", "25-03-2024", 0, 0.0, 0)).start();
         sc.close();
+
+        
    }
 }

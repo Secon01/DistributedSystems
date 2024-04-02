@@ -59,7 +59,7 @@ public class Filter extends Request
     }
 
     // Computes how many non null or 0 values does this object has
-    public int numFilter()
+    public int numNonZero()
     {
         int count = 0;
         Field[] fields = this.getClass().getDeclaredFields();
@@ -68,7 +68,7 @@ public class Filter extends Request
             try {
                 Object value = field.get(this);
 
-                if(value != null && !value.equals(0)) {
+                if(value != null && !value.equals(0) && !value.equals(0.0)) {
                     count++;
                 }
             } catch (IllegalAccessException e) {

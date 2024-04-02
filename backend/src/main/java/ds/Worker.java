@@ -10,16 +10,18 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Scanner;
+
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 public class Worker
 {
     private ArrayList<Room> rooms;                                                  // rooms array
     private Room room;                                                              // room instance
-    private static Filter filter;                                                          // filter instance
+    private static Filter filter;                                                   // filter instance
     private String[] propertyNames = {"area", "date", "guests", "price", "stars"};  // array with common properties of Room and Filter 
-    private static ServerSocket serverSocket;                                              // server socker 
-	private static Socket connection = null;                                                   // set connection null
+    private static ServerSocket serverSocket;                                       // server socket 
+    private ArrayList<Integer> indexes;                                             // array to collect room indexes of rooms 
 
     // Default constructor
     Worker(int port) throws IOException
@@ -28,11 +30,10 @@ public class Worker
         serverSocket = new ServerSocket(port);                              // create socket
         System.out.println("Worker is listening on port " + port);
         while(true) {
-            System.out.println("Stefff");
-            connection = serverSocket.accept();
+            Socket connection = serverSocket.accept();
             new Thread(() -> {
                 try {
-                    runServer();
+                    runServer(connection);
                 } catch (IOException e) {
                     e.printStackTrace();
                 } catch (InterruptedException e) {
@@ -40,6 +41,11 @@ public class Worker
                 }
             }).start();    
         }
+    }
+
+    Worker()
+    {
+        this.rooms = new ArrayList<>();
     }
     // Rooms array getter
     public ArrayList<Room> getRooms() 
@@ -85,19 +91,25 @@ public class Worker
 
     // Checking if worker has a room according to the incoming filter
     public boolean hasRoom(Filter filter)
-    {
-        if (filter.numFilter() == 0)                // if Filter object has only null or 0 values on properties
+    {   // Double flag 
+        boolean result = false;            
+        boolean finalResult = false;
+        indexes = new ArrayList<>();                    // indexes array initializatio   
+        if (filter.numNonZero() == 0)                // if Filter object has only null or 0 values on properties
         {
-            return false;
+            result = false;
         }
         for (Room room: rooms) {
             if (filter == null && room == null) {   // both objects are null
-                return false;
+                result = false;
             }
             if (filter == null || room == null) {
-                return false;                       // filter is null and room is not or the opposite
+                result = false;                       // filter is null and room is not or the opposite
             }
-
+            if (room.numNonZero() == 0)             // if Room object has only null or 0 values on properties
+            {
+                result = false;
+            }    
             // Iterate through 5 common properties of Filter and Room object
             // and checking on the same property in each iteration
             for (String propertyName : propertyNames) {
@@ -109,15 +121,15 @@ public class Worker
     
                     Object valueF = fieldF.get(filter);
                     Object valueR = fieldR.get(room);
-                    System.out.println(propertyName + ":" + valueF + " DEBUG");
-                    System.out.println(propertyName + ":" + valueR + " DEBUG");
+                    //System.out.println(propertyName + ":" + valueF + " DEBUG");
+                    //System.out.println(propertyName + ":" + valueR + " DEBUG");
     
                     // Both values are not null or 0, compare them
                     if (valueF != null && valueR != null && !valueF.equals(0) && !valueR.equals(0) && 
                         !valueF.equals(0.0) && !valueR.equals(0.0)) {
-                        if (!valueF.equals(valueR)) {
-                            System.out.println("NO MATCHES");
-                            return false;   // properties are not equal
+                        if (valueF.equals(valueR)) {
+                            //System.out.println("NO MATCHES");
+                            result = true;   // properties are equal
                         }
                     } else if(valueF == null || valueR == null || valueF.equals(0) || valueR.equals(0) || 
                               valueF.equals(0.0) || valueR.equals(0.0)) {
@@ -127,67 +139,89 @@ public class Worker
                     e.printStackTrace();
                 }
             }
+            if(result) {
+                indexes.add(rooms.indexOf(room));       // add index of iterated room to array
+                finalResult = true;                     // set final result equal to true
+            }
         }
-        return true;
+        return finalResult;
     }
     
     // Returns a room according to given filters 
-    public Room map(int id , Filter filter)
+    public ArrayList<Room> map(int id , Filter filter)
     {
-        Room resultRoom = null;
-        if (hasRoom(filter)) {                      // if worker has a room with the given filters
-            resultRoom = rooms.get(0).copy();       // make a copy of the room in the array
-            //System.out.println(resultRoom.getId() + " Debug");
-            resultRoom.setId(id);                   // set id of the selected room equal to filter's id
-            System.out.println("We found it!");
-        } 
-        return resultRoom;
+        ArrayList<Room> resultRooms = new ArrayList<>();        // initialize array
+        Room resultRoom;
+        if (hasRoom(filter)) {                                  // if worker has a room with the given filters
+            for(Integer index : indexes) {                      // for room index in indexes array
+                resultRoom = rooms.get(index).copy();           // copy room
+                resultRooms.add(resultRoom);                    // add copy of room in the results array
+                resultRoom.setId(id);                           // set id of the selected room equal to filter's id
+            }
+            //System.out.println("We found it!!");
+        } else {
+            System.out.println("No match!!");
+            return null;
+        }
+        return resultRooms;
     }
 
     // Opens worker's server side
-    private static void runServer() throws IOException, InterruptedException
+    private void runServer(Socket connection) throws IOException, InterruptedException
     {
         System.out.println(connection.getInputStream());
         BufferedReader input = new BufferedReader(new InputStreamReader(connection.getInputStream()));      // get input stream in buffered reader
         OutputStream output = connection.getOutputStream();                                                 // get output stream from master's socket
-
-        String requestLine = input.readLine();                                                          // set request line 
-        if (requestLine == null || requestLine.isEmpty()) {
-            Thread.interrupted();  // kill thread
+        synchronized(input) {
+            String requestLine = input.readLine();                                                          // set request line 
+            if (requestLine == null || requestLine.isEmpty()) {
+                Thread.interrupted();  // kill thread
+            }
+            // Header check
+            if (requestLine.startsWith("POST /newRoom")) {               
+                System.out.println("Received new room request...");
+                handleNewRoomRequest(input, output);
+            } else if (requestLine.startsWith("POST /searchRoom")) {
+                System.out.println("Received search room request...");
+                handleSearchRoomRequest(input, output);
+            } else {
+                sendNotImplementedResponse(output);
+            }
+            consumeRemainingRequest(input);
+            connection.close();                                                                                 // close socket    
         }
-        // Header check
-        if (requestLine.startsWith("POST /newRoom")) {               
-            System.out.println("Received new room request...");
-            handleNewRoomRequest(input, output);
-        } else if (requestLine.startsWith("POST /searchRoom")) {
-            System.out.println("Received search room request...");
-            handleSearchRoomRequest(input, output);
-            Thread.sleep(10000);
-        } else {
-            sendNotImplementedResponse(output);
-        }
-        consumeRemainingRequest(input);
-        connection.close();                                                                                 // close socket
 	}
 
+    private void printRooms()
+    {
+        for(Room room : rooms) {
+            System.out.println(room.toString() + "DEBUG");
+        }
+    }
     // Handles requests for new room insertion
-    private static void handleNewRoomRequest(BufferedReader in, OutputStream out) throws IOException {
+    private void handleNewRoomRequest(BufferedReader in, OutputStream out) throws IOException {
         String jsonRoom = extractBody(in);                                                                // extract json from request body
         Room room = new Gson().fromJson(jsonRoom, Room.class);                             // create filter object from json input file
         System.out.println("->-> " + room.toString());
+        addRoom(room);                                                                              // add room to array
+        //printRooms();
 
-        //System.out.println("Received filter data: " + jsonRoom);
+        System.out.println("Received filter data: " + jsonRoom);
         sendHttpResponse(out, 200, "OK", "{\"message\":\"New room added\"}",
                              "application/json");                                               // send response for succesfull http request
         System.out.println("Room added...");
     }
     // Handles requests for searching room
-    private static void handleSearchRoomRequest(BufferedReader in, OutputStream out) throws IOException {
+    private void handleSearchRoomRequest(BufferedReader in, OutputStream out) throws IOException {
         String jsonFilter = extractBody(in);                                                                // extract json from request body
         Filter filter = new Gson().fromJson(jsonFilter, Filter.class);                             // create filter object from json input file
         System.out.println("->-> " + filter.toString());
+        ArrayList<Room> resultRooms = map(filter.getId(), filter);                                          // get array with results for reducer
 
-        //System.out.println("Received filter data: " + requestBody);
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        String jsonResults = gson.toJson(resultRooms);
+        System.out.println("->->->" + jsonResults);
+        System.out.println("Received filter data: " + filter.toString());
         sendHttpResponse(out, 200, "OK", "{\"message\":\"New room added\"}"
                             , "application/json");                                              // send response for succesfull http request
         System.out.println("Filter added...");
@@ -205,17 +239,15 @@ public class Worker
         //System.out.println(httpResponse);   
         out.write(httpResponse.getBytes());
     }
-
-    // 
+    // Consume the remainig request...
     private static void consumeRemainingRequest(BufferedReader in) throws IOException {
         while (in.ready()) {
             in.readLine();
         }
     }
-
     // Extracts body from http search room request
     private static String extractBody(BufferedReader in) throws IOException 
-    {
+    {        
         StringBuilder requestBody = new StringBuilder();    // build the body of request into string
         String line;                                        // represents each line of http header
         // Extract content length
@@ -231,12 +263,25 @@ public class Worker
             in.read(buffer, 0, contentLength);
             requestBody.append(new String(buffer));
         }
-        return requestBody.toString();
+        return requestBody.toString();    
     }
     public static void main(String[] args) throws IOException{
         Scanner sc = new Scanner(System.in);
         System.out.println("Enter port");
         new Worker(sc.nextInt());
         sc.close();
+        /* 
+        Room room1 = new Room(null, null, 0, 0, 0, "Larisa", 0, null, null, null);
+        Room room2 = new Room(null, null, 0, 0, 0, "Lamia", 0, null, null, null);
+        Worker worker = new Worker();
+        worker.addRoom(room1);
+        worker.addRoom(room2);
+        Filter f1 = new Filter();
+        f1.setArea("Athens");
+        ArrayList<Room> results = worker.map(0, f1);
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        String jsonResults = gson.toJson(results);
+        System.out.println(jsonResults);
+        */
     }
 }

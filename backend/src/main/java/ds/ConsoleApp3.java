@@ -173,7 +173,6 @@ public class ConsoleApp3 extends Thread {
 
     private static void sendPostNewRoomRequest(BufferedReader in, PrintWriter out) {
         String jsonBody =  finalJSOString;
-        // "{\"roomName\":\"Standard\",\"noOfPersons\":3,\"area\":\"Suburbs\",\"stars\":3,\"noOfReviews\":50,\"roomImage\":\"/images/standard.png\"}";
         out.println("POST /newRoom HTTP/1.1");
         out.println("Host: localhost");
         out.println("Content-Type: application/json");
@@ -186,6 +185,5 @@ public class ConsoleApp3 extends Thread {
     public static void main(String[] args) {
         ConsoleApp3 insertion = new ConsoleApp3();
         insertion.runMenu();
-
     }
 }

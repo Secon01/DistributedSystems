@@ -17,7 +17,7 @@ public class Master
     private static int requestID = 0;               // id for request
     public static WorkerConfig workerConfig;        // workers configuration instance
     private static ServerSocket serverSocket;              // server socker 
-	private Socket connection = null;            // set connec null
+	//private Socket connection = null;            // set connec null
     private static int port = 8000;                 // set port of master
     private static String hostname = "localhost";   // host name      
     // Master constructor
@@ -26,20 +26,22 @@ public class Master
         serverSocket = new ServerSocket(port);                           // create socket
         System.out.println("Master is listening on port " + port);
         while(true) {
-            connection = serverSocket.accept();
+            Socket connection = serverSocket.accept();
             new Thread(() -> {
                 try {
-                    runServer();
+                    //synchronized(connection) {
+                    runServer(connection);
+                    //}
                 } catch (IOException e) {
                     e.printStackTrace();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-            }).start();    
+            }).start();
         }
     }
     // Give unique number in order in the next request
-    public synchronized static int generateUniqueNumber() {
+    public synchronized int generateUniqueNumber() {
         return requestID++;
     }
     // Hash function 
@@ -51,7 +53,7 @@ public class Master
         return nodeID;
     }
     // Opens master's server side
-    private void runServer() throws IOException, InterruptedException
+    private void runServer(Socket connection) throws IOException, InterruptedException
     {
         System.out.println(connection.getInputStream());
         BufferedReader input = new BufferedReader(new InputStreamReader(connection.getInputStream()));      // get input stream in buffered reader
@@ -68,23 +70,22 @@ public class Master
         } else if (requestLine.startsWith("POST /searchRoom")) {
             System.out.println("Received search room request...");
             handleSearchRoomRequest(input, output);
-            //Thread.sleep(10000);
         } else {
             sendNotImplementedResponse(output);
         }
-        consumeRemainingRequest(input);
-        connection.close();                                                                                 // close connection
+        //consumeRemainingRequest(input);
+        connection.close();                                                                                 // close connection        
     }
     // Returns decided port of worker by hash function
     private static int getPort(int wID)
     {
         int resultPort = 0;
         for(Worker worker : workerConfig.workers) {     // for worker in workers array
-            System.out.println("WorkerID: " + worker.workerID);
+            //System.out.println("WorkerID: " + worker.workerID);
             if(worker.workerID == wID) {           // if ids match
                 resultPort = worker.port;                      // return port
             } else {
-                System.out.println("NO ID FOUND");
+                //System.out.println("NO ID FOUND");
             }
         }
         return resultPort;   
@@ -105,35 +106,41 @@ public class Master
         int workerPort = getPort(workerID);                                             // get port of selected worker
         Socket socket = new Socket(hostname, workerPort);                               // open socket to worker's port
         PrintWriter output = new PrintWriter(socket.getOutputStream(), true);           // set output
+        BufferedReader inputWorker = new BufferedReader(new InputStreamReader(socket.getInputStream()));    // buffer for inputs from worker 
         sendNewRoomRequest(output, jsonRoom);                                           // send request
         // Read the response
         String responseLine;
-        while ((responseLine = in.readLine()) != null) {
+        while ((responseLine = inputWorker.readLine()) != null) {
             System.out.println(responseLine);
         }
         socket.close();                                                                                     // close socket
     }
 
     // Handles requests for searching room
-    private static void handleSearchRoomRequest(BufferedReader in, OutputStream out) throws IOException {
+    private void handleSearchRoomRequest(BufferedReader in, OutputStream out) throws IOException {
         String jsonFilter = extractBody(in);                                // extract json from request body
-        System.out.println(jsonFilter);
-        for(Worker worker : workerConfig.workers) {                         // for each worker configured
-            Socket socket = new Socket(hostname, worker.port);                               // open socket to worker's port
+        //System.out.println(jsonFilter);
+        Filter filter = new Gson().fromJson(jsonFilter, Filter.class);  // create filter object from json 
+        filter.setId(generateUniqueNumber());                                    // master sets a unique id to filter object
+        jsonFilter = new Gson().toJson(filter);                                  // convert filter object back to json
+        System.out.println("Received filter data: " + jsonFilter);
+        sendHttpResponse(out, 200, "OK", "{\"message\":\"Search room completed\"}"
+                        , "application/json");                                                   // send response for succesfull http request
+        System.out.println("Filter added...");
+ 
+        for(int i = 0; i < 3; i++) {                         // for each worker configured
+            Socket socket = new Socket(hostname, workerConfig.workers.get(i).port);                               // open socket to worker's port
             PrintWriter output = new PrintWriter(socket.getOutputStream(), true);           // set output
+            //BufferedReader inputWorker = new BufferedReader(new InputStreamReader(socket.getInputStream()));    // buffer for inputs from worker            
             sendSearchRoomRequest(output, jsonFilter);                                          // send request
             // Read the response
             String responseLine;
-            while ((responseLine = in.readLine()) != null) {
-                System.out.println(responseLine);
-            }
+            //while ((responseLine = inputWorker.readLine()) != null) {
+            //    System.out.println(responseLine);
+            //}
+            //consumeRemainingRequest(inputWorker);
             socket.close();                                                                                     // close socket                
         }
-
-        //System.out.println("Received filter data: " + jsonFilter);
-        sendHttpResponse(out, 200, "OK", "{\"message\":\"New room added\"}"
-                        , "application/json");                                                   // send response for succesfull http request
-        System.out.println("Filter added...");
     }
 
     // Sends http request for searching room to worker
@@ -178,10 +185,10 @@ public class Master
     // Extracts body from http search room request
     private static String extractBody(BufferedReader in) throws IOException 
     {
-        StringBuilder requestBody = new StringBuilder();    // build the body of request into string
-        String line;                                        // represents each line of http header
-        // Extract content length
-        int contentLength = 0;       
+    StringBuilder requestBody = new StringBuilder();    // build the body of request into string
+    String line;                                        // represents each line of http header
+    // Extract content length
+    int contentLength = 0;
         while (!(line = in.readLine()).isEmpty()) {
             if (line.toLowerCase().startsWith("content-length:")) {
                 contentLength = Integer.parseInt(line.substring("content-length:".length()).trim());
