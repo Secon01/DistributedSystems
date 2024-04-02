@@ -148,6 +148,7 @@ public class Dummy extends Thread {
         this.filter.setGuests(guests);
         this.filter.setPrice(price);
         this.filter.setStars(stars);
+        System.out.println(filter.toString());
    }
 
    Dummy() {
@@ -157,7 +158,11 @@ public class Dummy extends Thread {
         Scanner sc = new Scanner(System.in);
         System.out.println("Give input");
         input = sc.nextLine();
-        (new Dummy("Lamia", (String)null, 0, 0.0, 0)).start();
-        (new Dummy("Larisa", "25-03-2024", 0, 0.0, 0)).start();
+        for(int i = 0; i < 10; i++) {
+            (new Dummy("Lamia", null, 0, 0.0, 0)).start();
+            
+        }
+        //(new Dummy("Larisa", "25-03-2024", 0, 0.0, 0)).start();
+        sc.close();
    }
 }

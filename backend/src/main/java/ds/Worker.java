@@ -10,25 +10,37 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Scanner;
-
 import com.google.gson.Gson;
 
-public class Worker extends Thread
+public class Worker
 {
     private ArrayList<Room> rooms;                                                  // rooms array
     private Room room;                                                              // room instance
     private static Filter filter;                                                          // filter instance
     private String[] propertyNames = {"area", "date", "guests", "price", "stars"};  // array with common properties of Room and Filter 
     private static ServerSocket serverSocket;                                              // server socker 
-	private static Socket socket = null;                                                   // set socket null
-    private static int port;                                                        // port of worker
+	private static Socket connection = null;                                                   // set connection null
 
     // Default constructor
-    Worker()
+    Worker(int port) throws IOException
     {
-        this.rooms = new ArrayList<>();             // rooms array initialization
+        this.rooms = new ArrayList<>();                                     // rooms array initialization
+        serverSocket = new ServerSocket(port);                              // create socket
+        System.out.println("Worker is listening on port " + port);
+        while(true) {
+            System.out.println("Stefff");
+            connection = serverSocket.accept();
+            new Thread(() -> {
+                try {
+                    runServer();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }).start();    
+        }
     }
-
     // Rooms array getter
     public ArrayList<Room> getRooms() 
     {
@@ -133,67 +145,52 @@ public class Worker extends Thread
     }
 
     // Opens worker's server side
-    private static void openServer(int p) throws IOException
+    private static void runServer() throws IOException, InterruptedException
     {
-        port = p;                                                               
-		serverSocket = new ServerSocket(port, 10);                                                      // create socket
-        System.out.println("Worker is listening on port " + port);
+        System.out.println(connection.getInputStream());
+        BufferedReader input = new BufferedReader(new InputStreamReader(connection.getInputStream()));      // get input stream in buffered reader
+        OutputStream output = connection.getOutputStream();                                                 // get output stream from master's socket
 
-		while (true) {
-			socket = serverSocket.accept();
-            System.out.println(socket.getInputStream());
-            BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream()));      // get input stream in buffered reader
-            OutputStream output = socket.getOutputStream();                                                 // get output stream from master's socket
-
-            String requestLine = input.readLine();                                                          // set request line 
-            if (requestLine == null || requestLine.isEmpty()) continue;
-            // Header check
-            if (requestLine.startsWith("POST /newRoom")) {               
-                System.out.println("Received new room request...");
-                handleNewRoomRequest(input, output);
-            } else if (requestLine.startsWith("POST /searchRoom")) {
-                System.out.println("Received search room request...");
-                handleSearchRoomRequest(input, output);
-            } else {
-                sendNotImplementedResponse(output);
-            }
-            consumeRemainingRequest(input);
-            socket.close();                                                                                 // close socket
-		}
-    }
+        String requestLine = input.readLine();                                                          // set request line 
+        if (requestLine == null || requestLine.isEmpty()) {
+            Thread.interrupted();  // kill thread
+        }
+        // Header check
+        if (requestLine.startsWith("POST /newRoom")) {               
+            System.out.println("Received new room request...");
+            handleNewRoomRequest(input, output);
+        } else if (requestLine.startsWith("POST /searchRoom")) {
+            System.out.println("Received search room request...");
+            handleSearchRoomRequest(input, output);
+            Thread.sleep(10000);
+        } else {
+            sendNotImplementedResponse(output);
+        }
+        consumeRemainingRequest(input);
+        connection.close();                                                                                 // close socket
+	}
 
     // Handles requests for new room insertion
     private static void handleNewRoomRequest(BufferedReader in, OutputStream out) throws IOException {
-        StringBuilder requestBody = new StringBuilder();                                                    // build the body of request into string
-        String roomJson;
-        while (!(roomJson = in.readLine()).isEmpty()) {
-            requestBody.append(roomJson);
-        }
-        Room room = new Gson().fromJson(roomJson, Room.class);                                     // create room object from json input file
-        System.out.println(room.toString());
+        String jsonRoom = extractBody(in);                                                                // extract json from request body
+        Room room = new Gson().fromJson(jsonRoom, Room.class);                             // create filter object from json input file
+        System.out.println("->-> " + room.toString());
 
-        System.out.println("Received new room data: " + requestBody);
+        //System.out.println("Received filter data: " + jsonRoom);
         sendHttpResponse(out, 200, "OK", "{\"message\":\"New room added\"}",
                              "application/json");                                               // send response for succesfull http request
         System.out.println("Room added...");
     }
-
     // Handles requests for searching room
     private static void handleSearchRoomRequest(BufferedReader in, OutputStream out) throws IOException {
-        StringBuilder requestBody = new StringBuilder();                                                    // build the body of request into string
-        String filterJson;
-        while (!(filterJson = in.readLine()).isEmpty()) {
-            requestBody.append(filterJson);
-        }
-        filterJson = in.readLine().repeat(1);                                                               // repeat readline() one time in order to read json body
-        System.out.println(filterJson);
-        Filter filter = new Gson().fromJson(filterJson, Filter.class);                             // create filter object from json input file
+        String jsonFilter = extractBody(in);                                                                // extract json from request body
+        Filter filter = new Gson().fromJson(jsonFilter, Filter.class);                             // create filter object from json input file
         System.out.println("->-> " + filter.toString());
 
-        System.out.println("Received filter data: " + requestBody);
+        //System.out.println("Received filter data: " + requestBody);
         sendHttpResponse(out, 200, "OK", "{\"message\":\"New room added\"}"
                             , "application/json");                                              // send response for succesfull http request
-        System.out.println("Room added...");
+        System.out.println("Filter added...");
     }
 
     // Sends error message when the server is incapable of performing the request
@@ -216,11 +213,30 @@ public class Worker extends Thread
         }
     }
 
+    // Extracts body from http search room request
+    private static String extractBody(BufferedReader in) throws IOException 
+    {
+        StringBuilder requestBody = new StringBuilder();    // build the body of request into string
+        String line;                                        // represents each line of http header
+        // Extract content length
+        int contentLength = 0;       
+        while (!(line = in.readLine()).isEmpty()) {
+            if (line.toLowerCase().startsWith("content-length:")) {
+                contentLength = Integer.parseInt(line.substring("content-length:".length()).trim());
+            }
+        }    
+        // Read the body
+        if (contentLength > 0) {
+            char[] buffer = new char[contentLength];
+            in.read(buffer, 0, contentLength);
+            requestBody.append(new String(buffer));
+        }
+        return requestBody.toString();
+    }
     public static void main(String[] args) throws IOException{
         Scanner sc = new Scanner(System.in);
         System.out.println("Enter port");
-
-        openServer(sc.nextInt());
+        new Worker(sc.nextInt());
         sc.close();
     }
 }
