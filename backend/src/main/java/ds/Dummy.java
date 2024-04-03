@@ -167,7 +167,5 @@ public class Dummy extends Thread {
          }
         //(new Dummy("Larisa", "25-03-2024", 0, 0.0, 0)).start();
         sc.close();
-
-        
    }
 }

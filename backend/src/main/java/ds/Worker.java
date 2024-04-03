@@ -35,10 +35,9 @@ public class Worker
             Socket connection = serverSocket.accept();                      // accepting incoming connection
             new Thread(() -> {
                 try {
-                    synchronized(connection) {
+                    //synchronized(connection) {
                         runServer(connection);
-                    }
-                    System.out.println(getFilters().toString());
+                   //}
                 } catch (IOException e) {
                     e.printStackTrace();
                 } catch (InterruptedException e) {
@@ -206,7 +205,7 @@ public class Worker
     // Opens worker's server side
     private void runServer(Socket connection) throws IOException, InterruptedException
     {
-        System.out.println(connection.getInputStream());
+        System.out.println("Thread id: " + Thread.currentThread().getId());
         BufferedReader input = new BufferedReader(new InputStreamReader(connection.getInputStream()));      // get input stream in buffered reader
         OutputStream output = connection.getOutputStream();                                                 // get output stream from master's socket
         //synchronized(input) {
@@ -219,7 +218,7 @@ public class Worker
                 System.out.println("Received new room request...");
                 handleNewRoomRequest(input, output);
             } else if (requestLine.startsWith("POST /searchRoom")) {
-                System.out.println("Received search room request...");
+                //System.out.println("Received search room request...");
                 handleSearchRoomRequest(input, output);
             } else {
                 sendNotImplementedResponse(output);
@@ -251,7 +250,8 @@ public class Worker
     // Handles requests for searching room
     private void handleSearchRoomRequest(BufferedReader in, OutputStream out) throws IOException, InterruptedException {
         String jsonFilter = extractBody(in);                                                                // extract json from request body
-        Filter filter = new Gson().fromJson(jsonFilter, Filter.class);                             // create filter object from json input file
+        Filter filter = deserializeFilter(jsonFilter);                             // create filter object from json input file
+        System.out.println("Received request: " + filter.getId() + " with " + filter.toString());
         //synchronized(filter) {
         //Worker.filters.add(filter);
         //}
@@ -260,12 +260,11 @@ public class Worker
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         String jsonResults = gson.toJson(resultRooms);
         //System.out.println("->->->" + jsonResults);
-        System.out.println("Received filter data: " + filter.toString());
         //Thread.sleep(2000);
         sendHttpResponse(out, 200, "OK", "{\"message\":\"Filter added\"}"
                             , "application/json");                                              // send response for succesfull http request
         //System.out.println("Filter added...");
-        System.out.println("+-----------------------------+");
+        //System.out.println("+-----------------------------+");
     }
 
     // Sends error message when the server is incapable of performing the request
@@ -307,12 +306,11 @@ public class Worker
         return requestBody.toString();    
     }
     public static void main(String[] args) throws IOException{
-        /* 
         Scanner sc = new Scanner(System.in);
         System.out.println("Enter port");
         new Worker(sc.nextInt());
         sc.close();
-        */ 
+        /*  
         Room room1 = new Room("Villa", null, 0, 0, 0, "Larisa", 0, null, null, null, true);
         Room room2 = new Room("HotelPoseidon", null, 0, 0, 0, "Lamia", 0, null, null, null, true);
         Worker worker = new Worker();
@@ -328,6 +326,6 @@ public class Worker
         worker.giveReview("Villa",5);
         worker.giveReview("Villa", 3);
         System.out.println(room1.getStars());
-
+        */
     }
 }

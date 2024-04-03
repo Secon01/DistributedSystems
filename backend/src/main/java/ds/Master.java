@@ -14,7 +14,7 @@ import com.google.gson.Gson;
 
 public class Master
 {
-    private static int requestID = 0;               // id for request
+    private Request request;
     public static WorkerConfig workerConfig;        // workers configuration instance
     private static ServerSocket serverSocket;              // server socker 
 	//private Socket connection = null;            // set connec null
@@ -23,6 +23,7 @@ public class Master
     // Master constructor
     Master() throws IOException
     {
+        request = new Request();
         serverSocket = new ServerSocket(port);                           // create socket
         System.out.println("Master is listening on port " + port);
         while(true) {
@@ -40,10 +41,6 @@ public class Master
             }).start();
         }
     }
-    // Give unique number in order in the next request
-    public synchronized int generateUniqueNumber() {
-        return requestID++;
-    }
     // Hash function 
     public static int hashFunc(String roomName, int numOfWorkers) {
         int hashCode = roomName.hashCode();                         // hashing room's name
@@ -55,7 +52,7 @@ public class Master
     // Opens master's server side
     private void runServer(Socket connection) throws IOException, InterruptedException
     {
-        System.out.println(connection.getInputStream());
+        System.out.println("Thread id: " + Thread.currentThread().getId());
         BufferedReader input = new BufferedReader(new InputStreamReader(connection.getInputStream()));      // get input stream in buffered reader
         OutputStream output = connection.getOutputStream();                                                 // get output stream from master's socket
 
@@ -68,7 +65,7 @@ public class Master
             System.out.println("Received new room request...");
             handleNewRoomRequest(input, output);
         } else if (requestLine.startsWith("POST /searchRoom")) {
-            System.out.println("Received search room request...");
+            //System.out.println("Received search room request...");
             handleSearchRoomRequest(input, output);
         } else {
             sendNotImplementedResponse(output);
@@ -115,20 +112,19 @@ public class Master
         }
         socket.close();                                                                                     // close socket
     }
-
     // Handles requests for searching room
     private void handleSearchRoomRequest(BufferedReader in, OutputStream out) throws IOException, InterruptedException {
         String jsonFilter = extractBody(in);                                // extract json from request body
         //System.out.println(jsonFilter);
         Filter filter = new Gson().fromJson(jsonFilter, Filter.class);  // create filter object from json 
-        filter.setId(generateUniqueNumber());                                    // master sets a unique id to filter object
+        synchronized(request) {
+            filter.setId(request.generateUniqueNumber());                        // master sets a unique id to filter object
+            System.out.println("DEBUG!!!");
+        }
         jsonFilter = new Gson().toJson(filter);                                  // convert filter object back to json
-        System.out.println("Received filter data: " + filter.toString());
+        //System.out.println("Received filter data: " + filter.toString());
+        System.out.println("Received request: " + filter.getId() + " with " + filter.toString());
         //Thread.sleep(2000);
-        sendHttpResponse(out, 200, "OK", "{\"message\":\"Search room completed\"}"
-                        , "application/json");                                                   // send response for succesfull http request
-        System.out.println("Filter added...");
-        System.out.println("+-----------------------------+");
  
         // Client side of master
         for(int i = 0; i < 3; i++) {                         // for each worker configured
@@ -144,6 +140,11 @@ public class Master
             //consumeRemainingRequest(inputWorker);
             socket.close();                                                                                     // close socket                
         }
+        sendHttpResponse(out, 200, "OK", "{\"message\":\"Search room completed\"}"
+                        , "application/json");                                                   // send response for succesfull http request
+        //System.out.println("Filter added...");
+        //System.out.println("+-----------------------------+");
+
     }
 
     // Sends http request for searching room to worker
