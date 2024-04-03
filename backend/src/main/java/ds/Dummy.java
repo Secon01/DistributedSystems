@@ -115,12 +115,12 @@ public class Dummy extends Thread {
          return;
       }
       // Read the response
-      synchronized(in) {
+      //synchronized(in) {
          String responseLine;
          while ((responseLine = in.readLine()) != null) {
                System.out.println(responseLine); 
          }
-      }    
+      //}    
       } catch (IOException e) {
          e.printStackTrace();
       } finally {
@@ -160,11 +160,11 @@ public class Dummy extends Thread {
         Scanner sc = new Scanner(System.in);
         System.out.println("Give input");
         input = sc.nextLine();
-        //for(int i = 0; i < 10; i++) {
+        for(int i = 0; i < 10; i++) {
             (new Dummy("Larisa", null, 0, 0.0, 0)).start();
             //(new Dummy("Larissa", null, 0, 0.0, 0)).start(); 
          //(new Dummy("Larissa", null, 0, 0.0, 0)).start();   
-        //}
+         }
         //(new Dummy("Larisa", "25-03-2024", 0, 0.0, 0)).start();
         sc.close();
 

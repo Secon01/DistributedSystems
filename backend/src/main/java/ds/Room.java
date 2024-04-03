@@ -15,10 +15,11 @@ public class Room extends Request
     private String roomImage;
     private String StartDate;
     private String EndDate;
+    private boolean available;
 
     // Constructor
     Room(String name, String date, int guests, double price, int stars,
-            String area, int reviews, String image, String startDate, String endDate)
+            String area, int reviews, String image, String startDate, String endDate, boolean available)
     {
         this.roomName = name;
         this.date = date;
@@ -30,6 +31,7 @@ public class Room extends Request
         this.roomImage = image;
         this.StartDate = startDate;
         this.EndDate = endDate;
+        this.available = available;
     }
     // Default constructor
     Room()
@@ -72,12 +74,15 @@ public class Room extends Request
 
     public String getEndDate() {
         return EndDate;
-
     }
 
     public String getStartDate() {
         return StartDate;
+    }
 
+    public boolean getAvailable()
+    {
+        return available;
     }
     // Setters
     public void setRoomName(String roomName) {
@@ -120,6 +125,9 @@ public class Room extends Request
         this.EndDate = EndDate;
     }
     
+    public void setAvailable(boolean available) {
+        this.available = available;
+    }
     // Computes how many non null or 0 values does this object has
     public int numNonZero()
     {
@@ -144,12 +152,13 @@ public class Room extends Request
     public Room copy()
     {
         return new Room(this.roomName, this.date, this.guests, this.price, 
-                        this.stars, this.area, this.reviews, this.roomImage, this.StartDate, this.EndDate);
+                        this.stars, this.area, this.reviews, this.roomImage, this.StartDate, this.EndDate, this.available);
     }
 
     public String toString()
     {
         return "[" + this.roomName + ", " + this.date + ", " + this.guests + ", " + this.price + ", " + this.stars + ", "
-                    + this.area + ", " + this.reviews + ", " + this.roomImage + ", " + this.EndDate + ", " +this.StartDate + "]";
+                    + this.area + ", " + this.reviews + ", " + this.roomImage + ", " + this.EndDate + ", " +this.StartDate + 
+                    "," + this.available + "]";
     }
 }

@@ -29,9 +29,9 @@ public class Master
             Socket connection = serverSocket.accept();
             new Thread(() -> {
                 try {
-                    //synchronized(connection) {
+                //synchronized(connection) {
                     runServer(connection);
-                    //}
+                //}
                 } catch (IOException e) {
                     e.printStackTrace();
                 } catch (InterruptedException e) {
@@ -117,27 +117,30 @@ public class Master
     }
 
     // Handles requests for searching room
-    private void handleSearchRoomRequest(BufferedReader in, OutputStream out) throws IOException {
+    private void handleSearchRoomRequest(BufferedReader in, OutputStream out) throws IOException, InterruptedException {
         String jsonFilter = extractBody(in);                                // extract json from request body
         //System.out.println(jsonFilter);
         Filter filter = new Gson().fromJson(jsonFilter, Filter.class);  // create filter object from json 
         filter.setId(generateUniqueNumber());                                    // master sets a unique id to filter object
         jsonFilter = new Gson().toJson(filter);                                  // convert filter object back to json
-        System.out.println("Received filter data: " + jsonFilter);
+        System.out.println("Received filter data: " + filter.toString());
+        //Thread.sleep(2000);
         sendHttpResponse(out, 200, "OK", "{\"message\":\"Search room completed\"}"
                         , "application/json");                                                   // send response for succesfull http request
         System.out.println("Filter added...");
+        System.out.println("+-----------------------------+");
  
+        // Client side of master
         for(int i = 0; i < 3; i++) {                         // for each worker configured
             Socket socket = new Socket(hostname, workerConfig.workers.get(i).port);                               // open socket to worker's port
             PrintWriter output = new PrintWriter(socket.getOutputStream(), true);           // set output
-            //BufferedReader inputWorker = new BufferedReader(new InputStreamReader(socket.getInputStream()));    // buffer for inputs from worker            
+            BufferedReader inputWorker = new BufferedReader(new InputStreamReader(socket.getInputStream()));    // buffer for inputs from worker            
             sendSearchRoomRequest(output, jsonFilter);                                          // send request
             // Read the response
             String responseLine;
-            //while ((responseLine = inputWorker.readLine()) != null) {
-            //    System.out.println(responseLine);
-            //}
+            while ((responseLine = inputWorker.readLine()) != null) {
+                System.out.println(responseLine);
+            }
             //consumeRemainingRequest(inputWorker);
             socket.close();                                                                                     // close socket                
         }

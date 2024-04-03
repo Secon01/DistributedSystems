@@ -22,18 +22,23 @@ public class Worker
     private String[] propertyNames = {"area", "date", "guests", "price", "stars"};  // array with common properties of Room and Filter 
     private static ServerSocket serverSocket;                                       // server socket 
     private ArrayList<Integer> indexes;                                             // array to collect room indexes of rooms 
+    private static ArrayList<Filter> filters;
 
     // Default constructor
     Worker(int port) throws IOException
     {
+        Worker.filters = new ArrayList<>();                                 
         this.rooms = new ArrayList<>();                                     // rooms array initialization
         serverSocket = new ServerSocket(port);                              // create socket
         System.out.println("Worker is listening on port " + port);
         while(true) {
-            Socket connection = serverSocket.accept();
+            Socket connection = serverSocket.accept();                      // accepting incoming connection
             new Thread(() -> {
                 try {
-                    runServer(connection);
+                    synchronized(connection) {
+                        runServer(connection);
+                    }
+                    System.out.println(getFilters().toString());
                 } catch (IOException e) {
                     e.printStackTrace();
                 } catch (InterruptedException e) {
@@ -47,14 +52,20 @@ public class Worker
     {
         this.rooms = new ArrayList<>();
     }
+
+    private static ArrayList<Filter> getFilters()
+    {
+        return filters;
+    }
+
     // Rooms array getter
-    public ArrayList<Room> getRooms() 
+    private ArrayList<Room> getRooms() 
     {
         return rooms;
     }
     
     // Deserializes json file to a room object 
-    public Room deserializeRoom(String jsonString)
+    private Room deserializeRoom(String jsonString)
     {
         if(jsonString != null) {
             //System.out.println("JSON File Content:\n" + jsonString);
@@ -69,13 +80,13 @@ public class Worker
     }
 
     // Adds room in rooms array
-    public void addRoom(Room room)
+    private void addRoom(Room room)
     {   
         rooms.add(room);
     }
 
     // Deserializes json file to a filter object
-    public static Filter deserializeFilter(String jsonString)
+    private static Filter deserializeFilter(String jsonString)
     {
         if(jsonString != null) {
             //System.out.println("JSON File Content:\n" + jsonString);
@@ -90,7 +101,7 @@ public class Worker
     }
 
     // Checking if worker has a room according to the incoming filter
-    public boolean hasRoom(Filter filter)
+    private boolean hasRoom(Filter filter)
     {   // Double flag 
         boolean result = false;            
         boolean finalResult = false;
@@ -147,8 +158,8 @@ public class Worker
         return finalResult;
     }
     
-    // Returns a room according to given filters 
-    public ArrayList<Room> map(int id , Filter filter)
+    // Returns an array of rooms according to given filters and passes the filters' id to rooms
+    private ArrayList<Room> map(int id , Filter filter)
     {
         ArrayList<Room> resultRooms = new ArrayList<>();        // initialize array
         Room resultRoom;
@@ -166,13 +177,39 @@ public class Worker
         return resultRooms;
     }
 
+    // Set the room not available and does the booking
+    private void book(String roomName)
+    {
+        for(Room room : rooms) {
+            if(room.getRoomName() == roomName) {
+                room.setAvailable(false);
+                //System.out.println(room.getAvailable());
+            }
+            System.out.println(room.getRoomName() + " is " + room.getAvailable());
+        }
+    }
+
+    private void giveReview(String roomName ,int star){
+        for(Room room : rooms) {
+            if(room.getRoomName() == roomName){     
+                int numberof = room.getReviews();
+                numberof ++ ;
+                room.setReviews(numberof);
+                int starof = room.getStars();
+                starof = (starof + star)/numberof;
+                room.setStars(starof);
+            }
+        }
+    }
+
+
     // Opens worker's server side
     private void runServer(Socket connection) throws IOException, InterruptedException
     {
         System.out.println(connection.getInputStream());
         BufferedReader input = new BufferedReader(new InputStreamReader(connection.getInputStream()));      // get input stream in buffered reader
         OutputStream output = connection.getOutputStream();                                                 // get output stream from master's socket
-        synchronized(input) {
+        //synchronized(input) {
             String requestLine = input.readLine();                                                          // set request line 
             if (requestLine == null || requestLine.isEmpty()) {
                 Thread.interrupted();  // kill thread
@@ -189,7 +226,7 @@ public class Worker
             }
             consumeRemainingRequest(input);
             connection.close();                                                                                 // close socket    
-        }
+        //}
 	}
 
     private void printRooms()
@@ -212,19 +249,23 @@ public class Worker
         System.out.println("Room added...");
     }
     // Handles requests for searching room
-    private void handleSearchRoomRequest(BufferedReader in, OutputStream out) throws IOException {
+    private void handleSearchRoomRequest(BufferedReader in, OutputStream out) throws IOException, InterruptedException {
         String jsonFilter = extractBody(in);                                                                // extract json from request body
         Filter filter = new Gson().fromJson(jsonFilter, Filter.class);                             // create filter object from json input file
-        System.out.println("->-> " + filter.toString());
+        //synchronized(filter) {
+        //Worker.filters.add(filter);
+        //}
         ArrayList<Room> resultRooms = map(filter.getId(), filter);                                          // get array with results for reducer
 
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         String jsonResults = gson.toJson(resultRooms);
-        System.out.println("->->->" + jsonResults);
+        //System.out.println("->->->" + jsonResults);
         System.out.println("Received filter data: " + filter.toString());
-        sendHttpResponse(out, 200, "OK", "{\"message\":\"New room added\"}"
+        //Thread.sleep(2000);
+        sendHttpResponse(out, 200, "OK", "{\"message\":\"Filter added\"}"
                             , "application/json");                                              // send response for succesfull http request
-        System.out.println("Filter added...");
+        //System.out.println("Filter added...");
+        System.out.println("+-----------------------------+");
     }
 
     // Sends error message when the server is incapable of performing the request
@@ -266,22 +307,27 @@ public class Worker
         return requestBody.toString();    
     }
     public static void main(String[] args) throws IOException{
+        /* 
         Scanner sc = new Scanner(System.in);
         System.out.println("Enter port");
         new Worker(sc.nextInt());
         sc.close();
-        /* 
-        Room room1 = new Room(null, null, 0, 0, 0, "Larisa", 0, null, null, null);
-        Room room2 = new Room(null, null, 0, 0, 0, "Lamia", 0, null, null, null);
+        */ 
+        Room room1 = new Room("Villa", null, 0, 0, 0, "Larisa", 0, null, null, null, true);
+        Room room2 = new Room("HotelPoseidon", null, 0, 0, 0, "Lamia", 0, null, null, null, true);
         Worker worker = new Worker();
         worker.addRoom(room1);
         worker.addRoom(room2);
         Filter f1 = new Filter();
         f1.setArea("Athens");
-        ArrayList<Room> results = worker.map(0, f1);
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        String jsonResults = gson.toJson(results);
-        System.out.println(jsonResults);
-        */
+        //ArrayList<Room> results = worker.map(0, f1);
+        //Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        //String jsonResults = gson.toJson(results);
+        //System.out.println(jsonResults);
+        //worker.book("HotelPoseidon");
+        worker.giveReview("Villa",5);
+        worker.giveReview("Villa", 3);
+        System.out.println(room1.getStars());
+
     }
 }
