@@ -121,7 +121,7 @@ public class Master
                          "{\"message\":\"New room added\"}"
                             , "application/json");                          
         System.out.println("Room added...");
-        
+
         // Client side of master
         Room room = deserializeRoom(jsonRoom);                                          // get room object from json
         int workerID = hashFunc(room.getRoomName(), workerConfig.nofWorkers);           // hash room name and get worker id to send request  
@@ -168,13 +168,25 @@ public class Master
                 }        // buffer for inputs from worker            
                 sendSearchRoomRequest(output,json);                                                              // send request
                 // Read the response
+                StringBuilder responseBody = new StringBuilder();
                 String responseLine;
-                //StringBuilder response = new StringBuilder();
                 try {
-                    while ((responseLine = inputWorker.readLine()) != null) {                           // read response from input
-                        System.out.println(responseLine);
-                        //response.append(responseLine);
+                    int contentLength = 0;
+                    // Extract content length                    
+                    while (!(responseLine = inputWorker.readLine()).isEmpty()) {                           // read response from input
+                        if (responseLine.toLowerCase().startsWith("content-length:")) {
+                            contentLength = Integer.parseInt(responseLine.substring("content-length:".length()).trim());
+                        }                
+                        //System.out.println(responseLine);                    
                     }
+                    // Read the body
+                    if (contentLength > 0) {
+                        char[] buffer = new char[contentLength];
+                        inputWorker.read(buffer, 0, contentLength);
+                        responseBody.append(new String(buffer));
+                        //System.out.println(buffer);
+                    }
+                    System.out.println(responseBody.toString());    
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

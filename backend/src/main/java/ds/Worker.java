@@ -27,6 +27,10 @@ public class Worker
     {
         //Worker.filters = new ArrayList<>();                                 
         this.rooms = new ArrayList<>();                                     // rooms array initialization
+        Room room1 = new Room("Villa", null, 0, 0, 0, "Larisa", 0, null, null, null, true);
+        Room room2 = new Room("HotelPoseidon", null, 0, 0, 0, "Lamia", 0, null, null, null, true);
+        addRoom(room1);
+        addRoom(room2);
         serverSocket = new ServerSocket(port);                              // create socket
         System.out.println("Worker is listening on port " + port);
         while(true) {
@@ -155,8 +159,10 @@ public class Worker
         if (hasRoom(filter)) {                                  // if worker has a room with the given filters
             for(Integer index : indexes) {                      // for room index in indexes array
                 resultRoom = rooms.get(index).copy();           // copy room
-                resultRooms.add(resultRoom);                    // add copy of room in the results array
-                resultRoom.setId(id);                           // set id of the selected room equal to filter's id
+                synchronized(resultRoom) {
+                    resultRooms.add(resultRoom);                    // add copy of room in the results array
+                    resultRoom.setId(id);                           // set id of the selected room equal to filter's id    
+                }
             }
             //System.out.println("We found it!!");
         } else {
@@ -245,7 +251,7 @@ public class Worker
         System.out.println("Received request: " + filter.getId() + " with " + filter.toString() + " is Thread: " + Thread.currentThread().threadId());
         ArrayList<Room> resultRooms = map(filter.getId(), filter);                                          // get array with results for reducer
         String jsonResults = serializeResults(resultRooms);                                                 // serialize results to json
-        System.out.println("->->->" + jsonResults);
+        //System.out.println("->->->" + jsonResults);
         if(jsonResults == null) {                                                                           // if json with results is null
             sendHttpResponse(out, 404, "Not Found", "{\"message\":\"Room not found\"}"
             , "application/json");
