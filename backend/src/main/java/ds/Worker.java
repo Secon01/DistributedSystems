@@ -205,7 +205,7 @@ public class Worker
     // Opens worker's server side
     private void runServer(Socket connection) throws IOException, InterruptedException
     {
-        System.out.println("Thread id: " + Thread.currentThread().getId());
+        //System.out.println("Thread id: " + Thread.currentThread().getId());
         BufferedReader input = new BufferedReader(new InputStreamReader(connection.getInputStream()));      // get input stream in buffered reader
         OutputStream output = connection.getOutputStream();                                                 // get output stream from master's socket
         //synchronized(input) {
@@ -251,7 +251,7 @@ public class Worker
     private void handleSearchRoomRequest(BufferedReader in, OutputStream out) throws IOException, InterruptedException {
         String jsonFilter = extractBody(in);                                                                // extract json from request body
         Filter filter = deserializeFilter(jsonFilter);                             // create filter object from json input file
-        System.out.println("Received request: " + filter.getId() + " with " + filter.toString());
+        System.out.println("Received request: " + filter.getId() + " with " + filter.toString() + " is Thread: " + Thread.currentThread().threadId());
         //synchronized(filter) {
         //Worker.filters.add(filter);
         //}
@@ -259,10 +259,15 @@ public class Worker
 
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         String jsonResults = gson.toJson(resultRooms);
-        //System.out.println("->->->" + jsonResults);
-        //Thread.sleep(2000);
-        sendHttpResponse(out, 200, "OK", "{\"message\":\"Filter added\"}"
-                            , "application/json");                                              // send response for succesfull http request
+        System.out.println("->->->" + jsonResults);
+        if(jsonResults == null) {                                                                           // if json with results is null
+            sendHttpResponse(out, 404, "Not Found", "{\"message\":\"Room not found\"}"
+            , "application/json");
+            System.out.println("DEBUG");                                              // send response for succesfull http request
+        } else {
+            sendHttpResponse(out, 200, "OK", "{\"message\":\"Room found\"}"
+            , "application/json");                                              // send response for succesfull http request
+        }
         //System.out.println("Filter added...");
         //System.out.println("+-----------------------------+");
     }

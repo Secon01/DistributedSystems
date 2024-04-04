@@ -52,7 +52,7 @@ public class Master
     // Opens master's server side
     private void runServer(Socket connection) throws IOException, InterruptedException
     {
-        System.out.println("Thread id: " + Thread.currentThread().getId());
+        //.out.println("Thread id: " + Thread.currentThread().getId());
         BufferedReader input = new BufferedReader(new InputStreamReader(connection.getInputStream()));      // get input stream in buffered reader
         OutputStream output = connection.getOutputStream();                                                 // get output stream from master's socket
 
@@ -114,17 +114,13 @@ public class Master
     }
     // Handles requests for searching room
     private void handleSearchRoomRequest(BufferedReader in, OutputStream out) throws IOException, InterruptedException {
-        String jsonFilter = extractBody(in);                                // extract json from request body
-        //System.out.println(jsonFilter);
-        Filter filter = new Gson().fromJson(jsonFilter, Filter.class);  // create filter object from json 
+        String jsonFilter = extractBody(in);                                        // extract json from request body
+        Filter filter = new Gson().fromJson(jsonFilter, Filter.class);      // create filter object from json 
         synchronized(request) {
-            filter.setId(request.generateUniqueNumber());                        // master sets a unique id to filter object
-            System.out.println("DEBUG!!!");
+            filter.setId(request.generateUniqueNumber());                           // master sets a unique id to filter object
         }
-        jsonFilter = new Gson().toJson(filter);                                  // convert filter object back to json
-        //System.out.println("Received filter data: " + filter.toString());
-        System.out.println("Received request: " + filter.getId() + " with " + filter.toString());
-        //Thread.sleep(2000);
+        jsonFilter = new Gson().toJson(filter);                                     // convert filter object back to json
+        System.out.println("Received request: " + filter.getId() + " with " + filter.toString() + " is Thread: " + Thread.currentThread().threadId());
  
         // Client side of master
         for(int i = 0; i < 3; i++) {                         // for each worker configured
@@ -134,17 +130,21 @@ public class Master
             sendSearchRoomRequest(output, jsonFilter);                                          // send request
             // Read the response
             String responseLine;
-            while ((responseLine = inputWorker.readLine()) != null) {
+            StringBuilder response = new StringBuilder();
+            while ((responseLine = inputWorker.readLine()) != null) {                           // read response from input
                 System.out.println(responseLine);
+                response.append(responseLine);
+            }
+            if(response.toString().startsWith("HTTP/1.1 404 Not Found")) {                      // if response is 404 not found
+                sendHttpResponse(out, 404, "Not Found", "{\"message\":\"Room not found\"}"
+                , "application/json");                                                     // send response for unsuccesfull http request         
+            } else {
+                sendHttpResponse(out, 200, "OK", "{\"message\":\"Room Found\"}"
+                , "application/json");                                                      // send response for succesfull http request
             }
             //consumeRemainingRequest(inputWorker);
-            socket.close();                                                                                     // close socket                
+            socket.close();                                                                             // close socket                
         }
-        sendHttpResponse(out, 200, "OK", "{\"message\":\"Search room completed\"}"
-                        , "application/json");                                                   // send response for succesfull http request
-        //System.out.println("Filter added...");
-        //System.out.println("+-----------------------------+");
-
     }
 
     // Sends http request for searching room to worker
@@ -239,7 +239,7 @@ public class Master
         //    return;
         //}
         //System.out.println(workerConfig.toString()); 
-        String filepath = JsonUtils.readFileToString("C:\\Users\\sotir\\DistributedSystems\\workers.json"); // read file from args and convert it to string
+        String filepath = JsonUtils.readFileToString("/home/secon/Documents/GitHub/DistributedSystems/workers.json"); // read file from args and convert it to string
         Gson gson = new Gson();
         workerConfig = gson.fromJson(filepath, WorkerConfig.class);    // create worker config object from json
         new Master();

@@ -107,7 +107,7 @@ public class Dummy extends Thread {
       }
       try (PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
       BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
-      if (input.equals("searchRoom")){
+      if (input.equals("search")){
          sendSearchRoomRequest(out);
       } else {
          System.out.println("Unknown command. Use 'getRoom' or 'newRoom'.");
@@ -160,10 +160,10 @@ public class Dummy extends Thread {
         Scanner sc = new Scanner(System.in);
         System.out.println("Give input");
         input = sc.nextLine();
-        for(int i = 0; i < 10; i++) {
-            (new Dummy("Larisa", null, 0, 0.0, 0)).start();
-            //(new Dummy("Larissa", null, 0, 0.0, 0)).start(); 
-         //(new Dummy("Larissa", null, 0, 0.0, 0)).start();   
+        for(int i = 0; i < 1; i++) {
+            //(new Dummy("Larisa", "3/4/24", 3, 30.0, 3)).start();
+            //(new Dummy("Lamia", "4/4/24", 2, 40.0, 4)).start(); 
+            (new Dummy("Lamia", null, 0, 0.0, 0)).start();   
          }
         //(new Dummy("Larisa", "25-03-2024", 0, 0.0, 0)).start();
         sc.close();
