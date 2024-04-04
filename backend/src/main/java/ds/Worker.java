@@ -17,17 +17,15 @@ import com.google.gson.GsonBuilder;
 public class Worker
 {
     private ArrayList<Room> rooms;                                                  // rooms array
-    private Room room;                                                              // room instance
-    private static Filter filter;                                                   // filter instance
     private String[] propertyNames = {"area", "date", "guests", "price", "stars"};  // array with common properties of Room and Filter 
     private static ServerSocket serverSocket;                                       // server socket 
     private ArrayList<Integer> indexes;                                             // array to collect room indexes of rooms 
-    private static ArrayList<Filter> filters;
+    //private static ArrayList<Filter> filters;
 
     // Default constructor
     Worker(int port) throws IOException
     {
-        Worker.filters = new ArrayList<>();                                 
+        //Worker.filters = new ArrayList<>();                                 
         this.rooms = new ArrayList<>();                                     // rooms array initialization
         serverSocket = new ServerSocket(port);                              // create socket
         System.out.println("Worker is listening on port " + port);
@@ -52,52 +50,44 @@ public class Worker
         this.rooms = new ArrayList<>();
     }
 
-    private static ArrayList<Filter> getFilters()
-    {
-        return filters;
-    }
+    //private static ArrayList<Filter> getFilters()
+    //{
+    //    return filters;
+    //}
 
     // Rooms array getter
     private ArrayList<Room> getRooms() 
     {
         return rooms;
     }
-    
-    // Deserializes json file to a room object 
-    private Room deserializeRoom(String jsonString)
-    {
-        if(jsonString != null) {
-            //System.out.println("JSON File Content:\n" + jsonString);
-            // Convert the JSON string into an object
-            Gson gson = new Gson();                                 
-            room = gson.fromJson(jsonString, Room.class);
-            //System.out.println("Object created from JSON: " + room);
-        } else {
-            System.out.println("Failed to read the JSON file.");
-        }
-        return room;
-    }
 
     // Adds room in rooms array
     private void addRoom(Room room)
-    {   
-        rooms.add(room);
+    {
+        synchronized(room) {
+            rooms.add(room);
+        }   
+    }
+    
+    // Prints rooms of worker's array
+    private void printRooms()
+    {
+        for(Room room : rooms) {
+            System.out.println(room.toString() + "DEBUG");
+        }
     }
 
     // Deserializes json file to a filter object
-    private static Filter deserializeFilter(String jsonString)
+    private Filter deserializeFilter(String json)
     {
-        if(jsonString != null) {
-            //System.out.println("JSON File Content:\n" + jsonString);
-            // Convert the JSON string into an object
-            Gson gson = new Gson();                                 
-            filter = gson.fromJson(jsonString, Filter.class);
-            //System.out.println("Object created from JSON: " + filter);
-        } else {
-            System.out.println("Failed to read the JSON file.");
-        }
-        return filter;
+        return new Gson().fromJson(json, Filter.class);
     }
+
+    // Deserializes json file to a room object
+    private Room deserializeRoom(String json)
+    {
+        return new Gson().fromJson(json, Room.class);
+    }    
 
     // Checking if worker has a room according to the incoming filter
     private boolean hasRoom(Filter filter)
@@ -176,6 +166,14 @@ public class Worker
         return resultRooms;
     }
 
+    // Serialize results of worker's to Json 
+    private String serializeResults(ArrayList<Room> resRooms)
+    {
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        String jsonResults = gson.toJson(resRooms);
+        return jsonResults;
+    }
+
     // Set the room not available and does the booking
     private void book(String roomName)
     {
@@ -228,20 +226,13 @@ public class Worker
         //}
 	}
 
-    private void printRooms()
-    {
-        for(Room room : rooms) {
-            System.out.println(room.toString() + "DEBUG");
-        }
-    }
     // Handles requests for new room insertion
     private void handleNewRoomRequest(BufferedReader in, OutputStream out) throws IOException {
         String jsonRoom = extractBody(in);                                                                // extract json from request body
-        Room room = new Gson().fromJson(jsonRoom, Room.class);                             // create filter object from json input file
+        Room room = deserializeRoom(jsonRoom);                                                              // create filter object from json input file
         System.out.println("->-> " + room.toString());
-        addRoom(room);                                                                              // add room to array
+        addRoom(room);                                                                                  // add room to array
         //printRooms();
-
         System.out.println("Received filter data: " + jsonRoom);
         sendHttpResponse(out, 200, "OK", "{\"message\":\"New room added\"}",
                              "application/json");                                               // send response for succesfull http request
@@ -250,26 +241,19 @@ public class Worker
     // Handles requests for searching room
     private void handleSearchRoomRequest(BufferedReader in, OutputStream out) throws IOException, InterruptedException {
         String jsonFilter = extractBody(in);                                                                // extract json from request body
-        Filter filter = deserializeFilter(jsonFilter);                             // create filter object from json input file
+        Filter filter = deserializeFilter(jsonFilter);                                                      // create filter object from json input file
         System.out.println("Received request: " + filter.getId() + " with " + filter.toString() + " is Thread: " + Thread.currentThread().threadId());
-        //synchronized(filter) {
-        //Worker.filters.add(filter);
-        //}
         ArrayList<Room> resultRooms = map(filter.getId(), filter);                                          // get array with results for reducer
-
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        String jsonResults = gson.toJson(resultRooms);
+        String jsonResults = serializeResults(resultRooms);                                                 // serialize results to json
         System.out.println("->->->" + jsonResults);
         if(jsonResults == null) {                                                                           // if json with results is null
             sendHttpResponse(out, 404, "Not Found", "{\"message\":\"Room not found\"}"
             , "application/json");
-            System.out.println("DEBUG");                                              // send response for succesfull http request
+            System.out.println("DEBUG");                                                    // send response for succesfull http request
         } else {
-            sendHttpResponse(out, 200, "OK", "{\"message\":\"Room found\"}"
-            , "application/json");                                              // send response for succesfull http request
+            sendHttpResponse(out, 200, "OK", jsonResults
+            , "application/json");                                              // send response with results in json
         }
-        //System.out.println("Filter added...");
-        //System.out.println("+-----------------------------+");
     }
 
     // Sends error message when the server is incapable of performing the request

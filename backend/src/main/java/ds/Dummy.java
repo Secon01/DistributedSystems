@@ -166,6 +166,6 @@ public class Dummy extends Thread {
             (new Dummy("Lamia", null, 0, 0.0, 0)).start();   
          }
         //(new Dummy("Larisa", "25-03-2024", 0, 0.0, 0)).start();
-        sc.close();
+        sc.close();         
    }
 }

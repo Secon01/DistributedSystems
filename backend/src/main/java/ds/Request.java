@@ -16,5 +16,4 @@ public class Request
     public int generateUniqueNumber() {
         return requestID++;               
     }
-    
 }
