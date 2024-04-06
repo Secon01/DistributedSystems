@@ -4,26 +4,42 @@ import java.util.ArrayList;
 
 public class Reducer 
 {
-    private ArrayList<ArrayList<Room>> results;            // array with selected rooms based on given filters
-    private Room room;
+    private ArrayList<RoomResult> results;            // array with selected rooms based on given filter
+    private int currentID;
 
     // Constructor
     Reducer()
     {
-        results = new ArrayList<>();    // array initialization
+        results = new ArrayList<RoomResult>();    // array initialization
     }
 
-    public ArrayList<ArrayList<Room>> getResults() {
+    public void setCurrentID(int currentID) {
+        this.currentID = currentID;
+    }
+    public int getCurrentID() {
+        return currentID;
+    }
+    public ArrayList<RoomResult> getResults() {
         return results;
     }
 
-    private ArrayList<ArrayList<Room>> reduce(ArrayList<ArrayList<Room>> rooms)
+    public synchronized void reduce(int id, RoomResult resRooms) throws InterruptedException
     {
-        synchronized(room) {
-            results.addAll(rooms);
-            return results;    
-        }
+        //synchronized(this) {
+            if(id == this.currentID) {
+                this.results.add(resRooms);
+                notify();
+            } else {
+                wait();
+            }    
+       // }
     }
 
-
+    public void printRooms() throws InterruptedException
+    {
+        System.out.println(this.currentID);
+        for(RoomResult result : results) {
+            System.out.println(result.getRooms());
+        }
+    }
 }

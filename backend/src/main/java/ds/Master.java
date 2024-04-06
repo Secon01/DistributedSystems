@@ -11,6 +11,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import ds.JsonConverter.JsonUtils;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 public class Master
 {
@@ -43,10 +44,11 @@ public class Master
     }
 
     // Sets unique id to each request with filters
-    private void setRequestID(Request req, Filter filter)
+    private void setRequestID(Request req, Filter filter, Reducer reducer)
     {
         synchronized(req) {
             filter.setId(req.generateUniqueNumber());
+            reducer.setCurrentID(filter.getId());
         }
     }
     // Hash function 
@@ -76,6 +78,13 @@ public class Master
         return new Gson().toJson(filter);
     }
 
+    // Deserialize json to results  
+    private RoomResult deserializeResults(String json)
+    {
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        return gson.fromJson(json, RoomResult.class);
+    }
+
     // Opens master's server side
     private void runServer(Socket connection) throws IOException, InterruptedException
     {
@@ -96,7 +105,7 @@ public class Master
         } else {
             sendNotImplementedResponse(output);
         }
-        //consumeRemainingRequest(input);
+        consumeRemainingRequest(input);
         connection.close();                                                                                 // close connection        
     }
     // Returns decided port of worker by hash function
@@ -135,87 +144,97 @@ public class Master
         while ((responseLine = inputWorker.readLine()) != null) {
             System.out.println(responseLine);
         }
-        socket.close();                                                                                     // close socket
+        socket.close();                                                                 // close socket
     }
     // Handles requests for searching room
     private void handleSearchRoomRequest(BufferedReader in, OutputStream out) throws IOException, InterruptedException {
+        Reducer reducer = new Reducer();
         String jsonFilter = extractBody(in);                                        // extract json from request body
         Filter filter = deserializeFilter(jsonFilter);                              // create filter object from json 
-        setRequestID(request, filter);                                              // set a unique id to filter object
+        setRequestID(request, filter, reducer);                                     // set a unique id to filter and reducer object
         jsonFilter = serializeFilter(filter);                                       // convert filter object back to json
         System.out.println("Received request: " + filter.getId() + " with " + filter.toString() + " is Thread: " + Thread.currentThread().threadId());
         final String json = jsonFilter;     // make it final to work
         // Client side of master
-        for(Worker worker : workerConfig.workers) {                                 // for each worker configured
-            new Thread(() -> {
-                Socket socket = null;
-                try {
-                    socket = new Socket(hostname, worker.port);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }                                 // open socket to worker's port
-                PrintWriter output = null;
-                try {
-                    output = new PrintWriter(socket.getOutputStream(), true);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }                         // set output
-                BufferedReader inputWorker = null;
-                try {
-                    inputWorker = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }        // buffer for inputs from worker            
-                sendSearchRoomRequest(output,json);                                                              // send request
-                // Read the response
-                StringBuilder responseBody = new StringBuilder();
-                String responseLine;
-                try {
-                    int contentLength = 0;
-                    // Extract content length                    
-                    while (!(responseLine = inputWorker.readLine()).isEmpty()) {                           // read response from input
-                        if (responseLine.toLowerCase().startsWith("content-length:")) {
-                            contentLength = Integer.parseInt(responseLine.substring("content-length:".length()).trim());
-                        }                
-                        //System.out.println(responseLine);                    
+        //synchronized(reducer) { 
+            for(Worker worker : workerConfig.workers) {                                 // for each worker configured
+                Thread work  = new Thread(() -> {
+                    Socket socket = null;
+                    try {
+                        socket = new Socket(hostname, worker.port);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }                                 // open socket to worker's port
+                    PrintWriter outputWorker = null;
+                    try {
+                        outputWorker = new PrintWriter(socket.getOutputStream(), true);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }                         // set output
+                    BufferedReader inputWorker = null;
+                    try {
+                        inputWorker = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }        // buffer for inputs from worker            
+                    sendSearchRoomRequest(outputWorker,json);             // send request
+                    // Read the response
+                    String responseBody = null;
+                    try {
+                        responseBody = extractBody(inputWorker);                   // extract json with results 
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
-                    // Read the body
-                    if (contentLength > 0) {
-                        char[] buffer = new char[contentLength];
-                        inputWorker.read(buffer, 0, contentLength);
-                        responseBody.append(new String(buffer));
-                        //System.out.println(buffer);
+                    //System.out.println("->-> " + responseBody);
+                    RoomResult results =  deserializeResults(responseBody);
+                    //System.out.println(results.getId());
+                    //Reducer reducer = new Reducer();
+                    //synchronized(reducer) {
+                    try {
+                        reducer.reduce(results.getId(), results);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
                     }
-                    System.out.println(responseBody.toString());    
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                //consumeRemainingRequest(inputWorker);
-                try {
-                    socket.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }                                                                             // close socket               
-            }).start(); 
-
-            /* 
-            if(response.toString().startsWith("HTTP/1.1 404 Not Found")) {                      // if response is 404 not found
-                try {
-                    sendHttpResponse(out, 404, "Not Found", "{\"message\":\"Room not found\"}"
-                    , "application/json");
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }                                                     // send response for unsuccesfull http request         
-            } else {
-                try {
-                    sendHttpResponse(out, 200, "OK", "{\"message\":\"Room Found\"}"
-                    , "application/json");
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }                                                      // send response for succesfull http request
+                    //reducer.printRooms();    
+                    //System.out.println(results.getRooms());
+                    //Reducing stage
+                    try {
+                        consumeRemainingRequest(inputWorker);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    try {
+                        socket.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }                                                                             // close socket   
+                    synchronized(reducer) {
+                        reducer.notify();
+                    }           
+                });
+                work.start();
+                work.join();
+                /* 
+                if(response.toString().startsWith("HTTP/1.1 404 Not Found")) {                      // if response is 404 not found
+                    try {
+                        sendHttpResponse(out, 404, "Not Found", "{\"message\":\"Room not found\"}"
+                        , "application/json");
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }                                                     // send response for unsuccesfull http request         
+                } else {
+                */
+                //}
             }
-            */
-        }
+            //reducer.wait();
+            try {
+                sendHttpResponse(out, 200, "OK", 
+                new GsonBuilder().setPrettyPrinting().create().toJson(reducer)
+                , "application/json");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        //}                                                       // send response for succesfull http request
     }
 
     // Sends http request for searching room to worker

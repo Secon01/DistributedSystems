@@ -7,8 +7,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.Scanner;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 public class Dummy extends Thread {
    private boolean exit;
@@ -18,6 +20,20 @@ public class Dummy extends Thread {
    private static int port = 8000;
    static String[] inputArgs;
    public static String input;
+   private static ArrayList<Reducer> reducers;
+
+   Dummy(String area, String date, int guests, double price, int stars) {
+      this.filter = new Filter();
+      this.filter.setArea(area);
+      this.filter.setDate(date);
+      this.filter.setGuests(guests);
+      this.filter.setPrice(price);
+      this.filter.setStars(stars);
+      System.out.println(filter.toString());
+   }
+
+   Dummy() {
+   }
 
    public void header() {
       System.out.println("+----------------------------+");
@@ -45,7 +61,6 @@ public class Dummy extends Thread {
          int choice = this.getInput();
          this.performAction(choice);
       }
-
    }
 
    public int getInput() {
@@ -60,7 +75,6 @@ public class Dummy extends Thread {
             System.out.println("Invalid selection! Please try again.");
          }
       }
-
       return choice;
    }
 
@@ -94,7 +108,6 @@ public class Dummy extends Thread {
          default:
             System.out.println("An unknown error has occured!");
       }
-
    }
 
    public void run() 
@@ -114,12 +127,20 @@ public class Dummy extends Thread {
          sc.close();                 // close scanner
          return;
       }
+      String json = extractBody(in);
+      Reducer reducer = new GsonBuilder().setPrettyPrinting().create().fromJson(json, Reducer.class);
+      System.out.println(reducer.getResults() + " " + reducer.getCurrentID());
+      //reducer.printRooms();
+      synchronized(reducer) {
+         reducers.add(reducer);
+      }
+      //reducer.printRooms();
       // Read the response
       //synchronized(in) {
-         String responseLine;
-         while ((responseLine = in.readLine()) != null) {
-               System.out.println(responseLine); 
-         }
+      //   String responseLine;
+      //   while ((responseLine = in.readLine()) != null) {
+      //         System.out.println(responseLine); 
+      //   }
       //}    
       } catch (IOException e) {
          e.printStackTrace();
@@ -132,6 +153,27 @@ public class Dummy extends Thread {
       }         
    }
 
+    // Extracts body from http search room request
+    private static String extractBody(BufferedReader in) throws IOException 
+    {
+    StringBuilder requestBody = new StringBuilder();    // build the body of request into string
+    String line;                                        // represents each line of http header
+    // Extract content length
+    int contentLength = 0;
+        while (!(line = in.readLine()).isEmpty()) {
+            if (line.toLowerCase().startsWith("content-length:")) {
+                contentLength = Integer.parseInt(line.substring("content-length:".length()).trim());
+            }
+        }    
+        // Read the body
+        if (contentLength > 0) {
+            char[] buffer = new char[contentLength];
+            in.read(buffer, 0, contentLength);
+            requestBody.append(new String(buffer));
+        }
+        return requestBody.toString();
+    }
+
    private void sendSearchRoomRequest(PrintWriter out) {
         String jsonBody = new Gson().toJson(filter);
         out.println("POST /searchRoom HTTP/1.1");
@@ -142,30 +184,24 @@ public class Dummy extends Thread {
         out.println();
         out.println(jsonBody);
    }
-
-   Dummy(String area, String date, int guests, double price, int stars) {
-        this.filter = new Filter();
-        this.filter.setArea(area);
-        this.filter.setDate(date);
-        this.filter.setGuests(guests);
-        this.filter.setPrice(price);
-        this.filter.setStars(stars);
-        System.out.println(filter.toString());
-   }
-
-   Dummy() {
-   }
-
-   public static void main(String[] args) throws IOException {
-        Scanner sc = new Scanner(System.in);
-        System.out.println("Give input");
-        input = sc.nextLine();
-        for(int i = 0; i < 1; i++) {
-            //(new Dummy("Larisa", "3/4/24", 3, 30.0, 3)).start();
-            //(new Dummy("Lamia", "4/4/24", 2, 40.0, 4)).start(); 
-            (new Dummy("Lamia", null, 0, 0.0, 0)).start();
-            (new Dummy("Larisa", null, 0, 0.0, 0)).start();
-         }
-        sc.close();         
-   }
+   public static void main(String[] args) throws IOException, InterruptedException {
+      Scanner sc = new Scanner(System.in);
+      System.out.println("Give input");
+      input = sc.nextLine();
+      reducers = new ArrayList<>();
+      // Search() 
+      for(int i = 0; i < 10; i++) {
+         //(new Dummy("Larisa", "3/4/24", 3, 30.0, 3)).start();
+         //(new Dummy("Lamia", "4/4/24", 2, 40.0, 4)).start(); 
+         (new Dummy("Lamia", null, 0, 0.0, 0)).start();
+         (new Dummy("Larisa", null, 0, 0.0, 0)).start();
+      }
+      sc.close();
+      Thread.sleep(2000);
+      int i = 0;
+      reducers.sort(null);
+      for(Reducer reducer : reducers) {
+         
+      }
+   }  
 }
