@@ -157,8 +157,16 @@ public class Room extends Request
 
     public String toString()
     {
-        return "[" + this.roomName + ", " + this.date + ", " + this.guests + ", " + this.price + ", " + this.stars + ", "
-                    + this.area + ", " + this.reviews + ", " + this.roomImage + ", " + this.EndDate + ", " +this.StartDate + 
-                    "," + this.available + "]";
+        return "Name: " + this.roomName + "\n" +
+               "Area: " + this.area + "\n" +         
+               "Date: " + this.date + "\n" + 
+               "Number of guests: " + this.guests + "\n" + 
+               "Price: " + this.price + "\n" + 
+               "Stars: " + this.stars + "\n" +  
+               "Reviews: " + this.reviews + "\n" +
+               "Image: " + this.roomName + "\n" +
+               "Available: " + this.reviews + "\n" +
+               "Start date: " + this.reviews + "\n" +
+               "End date: " + this.reviews + "\n";
     }
 }

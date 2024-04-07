@@ -2,7 +2,7 @@ package ds;
 
 import java.util.ArrayList;
 
-public class Reducer 
+public class Reducer implements Comparable<Reducer>
 {
     private ArrayList<RoomResult> results;            // array with selected rooms based on given filter
     private int currentID;
@@ -35,11 +35,20 @@ public class Reducer
        // }
     }
 
+    // Prints request id and rooms of results arraylist
     public void printRooms() throws InterruptedException
     {
-        System.out.println(this.currentID);
+        System.out.println();
+        System.out.println();
+        System.out.println("+-------------- Request: " +  this.currentID + " --------------+");
         for(RoomResult result : results) {
-            System.out.println(result.getRooms());
+            result.printRooms();        // prints each room's data
         }
+    }
+
+    // Compares reducer objects based on their current ID
+    public int compareTo(Reducer other)
+    {
+        return Integer.compare(this.currentID, other.currentID);
     }
 }

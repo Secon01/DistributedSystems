@@ -31,7 +31,7 @@ public class Worker
         //Worker.filters = new ArrayList<>();                                 
         this.rooms = new ArrayList<>();                                     // rooms array initialization
         //results = new Results();
-        Room room1 = new Room("Villa", null, 0, 0, 0, "Larisa", 0, null, null, null, true);
+        Room room1 = new Room("Villa", null, 0, 40.0, 0, "Larisa", 0, null, null, null, true);
         Room room2 = new Room("HotelPoseidon", null, 0, 0, 0, "Lamia", 0, null, null, null, true);
         Room room3 = new Room("StefFarm", null, 0, 0, 0, "Lamia", 0, null, null, null, true);
         addRoom(room1);

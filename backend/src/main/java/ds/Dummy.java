@@ -8,6 +8,8 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Scanner;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -32,7 +34,8 @@ public class Dummy extends Thread {
       System.out.println(filter.toString());
    }
 
-   Dummy() {
+   Dummy() 
+   {
    }
 
    public void header() {
@@ -110,6 +113,17 @@ public class Dummy extends Thread {
       }
    }
 
+   // Sends filter to master and prints results
+   private void search() throws InterruptedException
+   {
+      reducers = new ArrayList<>();       // intialize arraylist with reduce objects
+      new Dummy().start();                        // create request thread and send it to master
+      Collections.sort(reducers);         // sort reducers array list based on current id
+      for(Reducer reducer : reducers) {   // for each reducer obejct in reducers arraylist
+         reducer.printRooms();            // print results
+      }
+   }
+
    public void run() 
    {
       Socket socket = null;
@@ -129,7 +143,7 @@ public class Dummy extends Thread {
       }
       String json = extractBody(in);
       Reducer reducer = new GsonBuilder().setPrettyPrinting().create().fromJson(json, Reducer.class);
-      System.out.println(reducer.getResults() + " " + reducer.getCurrentID());
+      //System.out.println(reducer.getResults() + " " + reducer.getCurrentID());
       //reducer.printRooms();
       synchronized(reducer) {
          reducers.add(reducer);
@@ -188,20 +202,19 @@ public class Dummy extends Thread {
       Scanner sc = new Scanner(System.in);
       System.out.println("Give input");
       input = sc.nextLine();
-      reducers = new ArrayList<>();
-      // Search() 
-      for(int i = 0; i < 10; i++) {
+      sc.close();
+      // Search()
+      reducers = new ArrayList<>(); 
+      for(int i = 0; i < 2; i++) {
          //(new Dummy("Larisa", "3/4/24", 3, 30.0, 3)).start();
          //(new Dummy("Lamia", "4/4/24", 2, 40.0, 4)).start(); 
          (new Dummy("Lamia", null, 0, 0.0, 0)).start();
          (new Dummy("Larisa", null, 0, 0.0, 0)).start();
       }
-      sc.close();
       Thread.sleep(2000);
-      int i = 0;
-      reducers.sort(null);
-      for(Reducer reducer : reducers) {
-         
+      Collections.sort(reducers);         // sort reducers array list based on current id
+      for(Reducer reducer : reducers) {   // for each reducer obejct in reducers arraylist
+         reducer.printRooms();            // print results        
       }
    }  
 }

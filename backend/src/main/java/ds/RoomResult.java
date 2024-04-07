@@ -5,7 +5,7 @@ import java.util.ArrayList;
 public class RoomResult 
 {
     private ArrayList<Room> rooms;                   // array with searching results 
-    private int id;                                         // 
+    private int id;                                  // id of array 
 
     // Costructor 
     RoomResult()
@@ -29,8 +29,14 @@ public class RoomResult
     // Adds room to array
     public  void addRoom(Room room)
     {
-        //synchronized(room) {
-            rooms.add(room);
-        //}
+        rooms.add(room);
+    }
+
+    // Prints rooms of rooms array
+    public void printRooms()
+    {
+        for(Room room : rooms) {
+            System.out.println(room.toString());
+        }
     }
 }
