@@ -10,9 +10,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Scanner;
-
-import javax.naming.spi.DirStateFactory.Result;
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -31,22 +28,21 @@ public class Worker
         //Worker.filters = new ArrayList<>();                                 
         this.rooms = new ArrayList<>();                                     // rooms array initialization
         //results = new Results();
+        /* 
         Room room1 = new Room("Villa", null, 0, 40.0, 0, "Larisa", 0, null, null, null, true);
         Room room2 = new Room("HotelPoseidon", null, 0, 0, 0, "Lamia", 0, null, null, null, true);
         Room room3 = new Room("StefFarm", null, 0, 0, 0, "Lamia", 0, null, null, null, true);
         addRoom(room1);
         addRoom(room2);
         addRoom(room3);
-        //System.out.println(getRooms().toString());
+        */
         serverSocket = new ServerSocket(port);                              // create socket
         System.out.println("Worker is listening on port " + port);
         while(true) {
             Socket connection = serverSocket.accept();                      // accepting incoming connection
             new Thread(() -> {
                 try {
-                    //synchronized(connection) {
-                        runServer(connection);
-                   //}
+                    runServer(connection);                                  // open server side of worker
                 } catch (IOException e) {
                     e.printStackTrace();
                 } catch (InterruptedException e) {
@@ -60,12 +56,6 @@ public class Worker
     {
         this.rooms = new ArrayList<>();
     }
-
-    //private static ArrayList<Filter> getFilters()
-    //{
-    //    return filters;
-    //}
-
     // Rooms array getter
     private ArrayList<Room> getRooms() 
     {
@@ -84,7 +74,7 @@ public class Worker
     private void printRooms()
     {
         for(Room room : rooms) {
-            System.out.println(room.toString() + "DEBUG");
+            System.out.println(room.toString());
         }
     }
 
@@ -163,13 +153,11 @@ public class Worker
     
     // Returns an array of rooms according to given filters and passes the filters' id to rooms
     private RoomResult map(ArrayList<Integer> indx,  Filter filter) throws InterruptedException
-    {
-        //ArrayList<Room> resultRooms = new ArrayList<>();        // initialize array
+    {          
         Room resultRoom;
-        RoomResult results = new RoomResult();        
-        //synchronized(rooms) {
-        if (!indx.isEmpty()) {                                  // if worker has a room with the given filter
-            for(Integer index : indx) {
+        RoomResult results = new RoomResult();                      // initialize array
+        if (!indx.isEmpty()) {                                      // if worker has a room with the given filter
+            for(Integer index : indx) {                             // for room index in indexes array
                 System.out.println(indx.toString());
                 //synchronized(rooms) {        
                     //results = new Results();
@@ -179,7 +167,7 @@ public class Worker
                     //System.out.println(results.getRooms().toString() + " DEBUG!!! " + Thread.currentThread().threadId());
                     results.setId(filter.getId());                           // set id of the selected room equal to filter's id        
                     //System.out.println(results.getId() + " DEBUG!!! " + Thread.currentThread().threadId());
-                //}                    // for room index in indexes array
+                                    
             }
             //System.out.println("We found it!!");
         } else {
@@ -223,7 +211,6 @@ public class Worker
         }
     }
 
-
     // Opens worker's server side
     private void runServer(Socket connection) throws IOException, InterruptedException
     {
@@ -266,7 +253,8 @@ public class Worker
     private void handleSearchRoomRequest(BufferedReader in, OutputStream out) throws IOException, InterruptedException {
         String jsonFilter = extractBody(in);                                                                // extract json from request body
         Filter filter = deserializeFilter(jsonFilter);                                                      // create filter object from json input file
-        System.out.println("Received request: " + filter.getId() + " with " + filter.toString() + " is Thread: " + Thread.currentThread().threadId());
+        System.out.println("Received request: " + filter.getId() + " with " 
+                        + filter.toString() + " is Thread: " + Thread.currentThread().threadId());
         RoomResult resultRooms = map(hasRoom(filter), filter);                                          // get array with results for reducer
         String jsonResults = serializeResults(resultRooms);                                                 // serialize results to json
         System.out.println("->->->" + jsonResults);
@@ -318,10 +306,10 @@ public class Worker
         }
         return requestBody.toString();    
     }
-    public static void main(String[] args) throws IOException{
+    public static void main(String[] args) throws IOException, InterruptedException{
         Scanner sc = new Scanner(System.in);
         System.out.println("Enter port");
-        new Worker(sc.nextInt());
+        Worker worker = new Worker(sc.nextInt());
         sc.close();
         /*  
         Room room1 = new Room("Villa", null, 0, 0, 0, "Larisa", 0, null, null, null, true);
@@ -340,5 +328,7 @@ public class Worker
         worker.giveReview("Villa", 3);
         System.out.println(room1.getStars());
         */
+        Thread.sleep(1000);
+        worker.printRooms(); 
     }
 }

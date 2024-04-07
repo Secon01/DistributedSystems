@@ -6,12 +6,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Scanner;
 import org.json.JSONObject;
-
-import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
-//TCP related imports
 import java.io.*;
-//import java.net.*;
 import java.net.Socket;
 
 public class ConsoleApp3 extends Thread {
@@ -30,8 +26,7 @@ public class ConsoleApp3 extends Thread {
 
     }
 
-    // Print Menu
-
+    // Print menu
     public void menu() {
         System.out.println("Select an action");
         System.out.println(" 1) Insert House Information ");
@@ -39,6 +34,7 @@ public class ConsoleApp3 extends Thread {
         System.out.println(" 0) Exit");
     }
 
+    // Run menu
     public void runMenu() {
 
         welcome();
@@ -49,7 +45,7 @@ public class ConsoleApp3 extends Thread {
         }
 
     }
-
+    // Get user input
     public int getInput() {
         inp = new Scanner(System.in); // initialize scanner
         int choice = -1;

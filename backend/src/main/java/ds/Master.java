@@ -31,9 +31,7 @@ public class Master
             Socket connection = serverSocket.accept();
             new Thread(() -> {
                 try {
-                //synchronized(connection) {
-                    runServer(connection);
-                //}
+                    runServer(connection);                              // run server side of master
                 } catch (IOException e) {
                     e.printStackTrace();
                 } catch (InterruptedException e) {
@@ -97,7 +95,7 @@ public class Master
         }
         // Header check
         if (requestLine.startsWith("POST /newRoom")) {               
-            System.out.println("Received new room request...");
+            //System.out.println("Received new room request...");
             handleNewRoomRequest(input, output);
         } else if (requestLine.startsWith("POST /searchRoom")) {
             //System.out.println("Received search room request...");
@@ -126,8 +124,8 @@ public class Master
     private void handleNewRoomRequest(BufferedReader in, OutputStream out) throws IOException {
         String jsonRoom = extractBody(in);                                              // extract json from request body
         Room room = deserializeRoom(jsonRoom);                                          // get room object from json
-        System.out.println("Received request: " + room.getId() + 
-                            " with " + room.toString() + " is Thread: " + Thread.currentThread().threadId());
+        System.out.println("Received request: " + room.getId() + " is Thread: " + Thread.currentThread().threadId()
+                            + " with " + room.toString());
         // Client side of master                                    
         int workerID = hashFunc(room.getRoomName(), workerConfig.nofWorkers);           // hash room name and get worker id to send request  
         int workerPort = getPort(workerID);                                             // get port of selected worker
