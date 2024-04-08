@@ -100,6 +100,9 @@ public class Master
         } else if (requestLine.startsWith("POST /searchRoom")) {
             //System.out.println("Received search room request...");
             handleSearchRoomRequest(input, output);
+        } else if(requestLine.startsWith("POST /bookRoom")) {
+            System.out.println("Received book room request...");
+            handleBookRoomRequest(input, output);
         } else {
             sendNotImplementedResponse(output);
         }
@@ -125,25 +128,43 @@ public class Master
         String jsonRoom = extractBody(in);                                              // extract json from request body
         Room room = deserializeRoom(jsonRoom);                                          // get room object from json
         System.out.println("Received request: " + room.getId() + " is Thread: " + Thread.currentThread().threadId()
-                            + " with " + room.toString());
+                            + " with: " + "\n" + room.toString());
         // Client side of master                                    
         int workerID = hashFunc(room.getRoomName(), workerConfig.nofWorkers);           // hash room name and get worker id to send request  
         int workerPort = getPort(workerID);                                             // get port of selected worker
-        Socket socket = new Socket(hostname, workerPort);                               // open socket to worker's port
-        PrintWriter output = new PrintWriter(socket.getOutputStream(), true); // set output
-        BufferedReader inputWorker = new BufferedReader
-                                    (new InputStreamReader(socket.getInputStream()));   // buffer for inputs from worker 
-        sendNewRoomRequest(output, jsonRoom);                                           // send request
-        // Read the response
-        String responseLine;
-        while ((responseLine = inputWorker.readLine()) != null) {
-            System.out.println(responseLine);
-        }
-        socket.close();                                                                 // close socket
+        new Thread(() -> {
+            Socket socket = null;
+            try {
+                socket = new Socket(hostname, workerPort);                              // open socket to worker's port
+            } catch (IOException e) {
+                e.printStackTrace();
+            }                               
+            PrintWriter output = null;
+            try {
+                output = new PrintWriter(socket.getOutputStream(), true);       // set output
+            } catch (IOException e) {
+                e.printStackTrace();
+            } 
+            try (BufferedReader inputWorker = new BufferedReader
+                                        (new InputStreamReader(socket.getInputStream()))) {
+                sendNewRoomRequest(output, jsonRoom);                                   // send request
+                // Read the response
+                String responseLine;
+                while ((responseLine = inputWorker.readLine()) != null) {
+                    System.out.println(responseLine);                                   // print response message
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {
+                socket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }                                                                           // close socket
+        }).start();   
         sendHttpResponse(out, 200, "OK",                        // send response for succesfull http request
         "{\"message\":\"New room added\"}"
            , "application/json");                          
-        System.out.println("Room added...");
     }
     // Handles requests for searching room
     private void handleSearchRoomRequest(BufferedReader in, OutputStream out) throws IOException, InterruptedException {
@@ -228,6 +249,15 @@ public class Master
         }                                                 
     }
 
+    // Handles requests for booking room
+    private void handleBookRoomRequest(BufferedReader in, OutputStream out) throws IOException {
+        String jsonString = extractBody(in);                                            // extract json with room name from request body
+        String roomName = new Gson().fromJson(jsonString, String.class);       // create string with room name from json
+        int workerID = hashFunc(roomName, workerConfig.nofWorkers);                     // hash room name and get worker id to send request  
+        int workerPort = getPort(workerID);                                             // get port of selected worker
+        System.out.println(roomName);
+    }
+
     // Sends http request for searching room to worker
     private static void sendSearchRoomRequest(PrintWriter out, String jsonBody) {
         out.println("POST /searchRoom HTTP/1.1");
@@ -275,7 +305,7 @@ public class Master
     // Extract content length
     int contentLength = 0;
         while (!(line = in.readLine()).isEmpty()) {
-            System.out.println(line);                   // print http response
+            //System.out.println(line);                   // print http response
             if (line.toLowerCase().startsWith("content-length:")) {
                 contentLength = Integer.parseInt(line.substring("content-length:".length()).trim());
             }

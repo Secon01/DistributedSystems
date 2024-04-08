@@ -9,20 +9,20 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Scanner;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 public class Dummy extends Thread {
    private boolean exit;
-   private Scanner sc;
+   private static Scanner sc;
    private Filter filter;
    private static String hostname = "localhost";
    private static int port = 8000;
    static String[] inputArgs;
    public static String input;
-   private static ArrayList<Reducer> reducers;
+   private static ArrayList<Reducer> reducers;        // array list with reducer objects for printing
+   private static String roomName;                           // room name for booking
 
    Dummy(String area, String date, int guests, double price, int stars) {
       this.filter = new Filter();
@@ -32,6 +32,11 @@ public class Dummy extends Thread {
       this.filter.setPrice(price);
       this.filter.setStars(stars);
       System.out.println(filter.toString());
+   }
+
+   Dummy(String roomName)
+   {
+      Dummy.roomName = roomName;
    }
 
    Dummy() 
@@ -136,7 +141,16 @@ public class Dummy extends Thread {
       BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
       if (input.equals("search")){
          sendSearchRoomRequest(out);
-      } else {
+      }  else if(input.equals("book")) {
+         sendBookRoomRequest(out);
+         // Read the response
+         String responseLine;
+         while ((responseLine = in.readLine()) != null) {
+            System.out.println(responseLine); 
+         }    
+         return;
+      } 
+      else {
          System.out.println("Unknown command. Use 'getRoom' or 'newRoom'.");
          sc.close();                 // close scanner
          return;
@@ -198,23 +212,40 @@ public class Dummy extends Thread {
         out.println();
         out.println(jsonBody);
    }
+
+   private void sendBookRoomRequest(PrintWriter out) {
+      String jsonBody = new Gson().toJson(roomName);
+      out.println("POST /bookRoom HTTP/1.1");
+      out.println("Host: localhost");
+      out.println("Content-Type: application/json");
+      out.println("Content-Length: " + jsonBody.length());
+      out.println("Connection: close");
+      out.println();
+      out.println(jsonBody);
+ }
+
    public static void main(String[] args) throws IOException, InterruptedException {
-      Scanner sc = new Scanner(System.in);
+      sc = new Scanner(System.in);
       System.out.println("Give input");
       input = sc.nextLine();
       sc.close();
-      // Search()
-      reducers = new ArrayList<>(); 
-      for(int i = 0; i < 2; i++) {
-         //(new Dummy("Larisa", "3/4/24", 3, 30.0, 3)).start();
-         //(new Dummy("Lamia", "4/4/24", 2, 40.0, 4)).start(); 
-         (new Dummy("Lamia", null, 0, 0.0, 0)).start();
-         (new Dummy("Larisa", null, 0, 0.0, 0)).start();
-      }
-      Thread.sleep(2000);
-      Collections.sort(reducers);         // sort reducers array list based on current id
-      for(Reducer reducer : reducers) {   // for each reducer obejct in reducers arraylist
-         reducer.printRooms();            // print results        
+      if(input .equals("search")) {
+         // Search()
+         reducers = new ArrayList<>(); 
+         for(int i = 0; i < 1; i++) {
+            //(new Dummy("Larisa", "3/4/24", 3, 30.0, 3)).start();
+            //(new Dummy("Lamia", "4/4/24", 2, 40.0, 4)).start(); 
+            (new Dummy("Downtown", null, 0, 180.0, 0)).start();
+            (new Dummy("Mountains", null, 0, 0.0, 5)).start(); 
+         }
+         Thread.sleep(1000);
+         Collections.sort(reducers);         // sort reducers array list based on current id
+         for(Reducer reducer : reducers) {   // for each reducer obejct in reducers arraylist
+            reducer.printRooms();            // print results        
+         } 
+      } else {
+         // Book()         
+         new Dummy("Mountain Chalet").start();
       }
    }  
 }

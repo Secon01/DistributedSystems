@@ -6,6 +6,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Scanner;
 import org.json.JSONObject;
+
+import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import java.io.*;
 import java.net.Socket;
@@ -18,6 +20,13 @@ public class ConsoleApp3 extends Thread {
     String end;
     String start;
     static String finalJSOString;
+
+    ConsoleApp3(Room room) throws IOException
+    {
+        finalJSOString = new Gson().toJson(room);
+        System.out.println(finalJSOString);
+        sendrequest();
+    }
 
     public void welcome() {
         System.out.println("+---------------------------------+");
@@ -178,8 +187,31 @@ public class ConsoleApp3 extends Thread {
         out.println(jsonBody);
     }
 
-    public static void main(String[] args) {
-        ConsoleApp3 insertion = new ConsoleApp3();
-        insertion.runMenu();
+    public static void main(String[] args) throws IOException {
+        //ConsoleApp3 insertion = new ConsoleApp3();
+        //insertion.runMenu();
+        /* 
+        Room room1 = new Room("Villa", null, 0, 40.0, 0, "Larisa", 0, null, null, null, true);
+        Room room2 = new Room("HotelPoseidon", null, 0, 0, 0, "Athens", 0, null, null, null, true);
+        Room room3 = new Room("StefFarm", null, 0, 0, 0, "Lamia", 0, null, null, null, true);
+        */
+        Room room1 = new Room("Luxury Suite", "2024-04-01", 2, 200.0, 5,
+                                "Downtown", 100, "luxury_suite.jpg", "2024-04-01", "2024-04-07", true);
+        Room room2 = new Room("Cozy Cabin", "2024-04-02", 4, 150.0, 4,
+                                "Mountains", 80, "cozy_cabin.jpg", "2024-04-02", "2024-04-08", true);
+        Room room3 = new Room("Beach House", "2024-04-03", 6, 300.0, 5,
+                                "Beachfront", 120, "beach_house.jpg", "2024-04-03", "2024-04-09", true);
+        Room room4 = new Room("City Apartment", "2024-04-04", 3, 180.0, 4,
+                                "Urban", 90, "city_apartment.jpg", "2024-04-04", "2024-04-10", true);
+        Room room5 = new Room("Country Cottage", "2024-04-05", 4, 160.0, 4,
+                                "Rural", 85, "country_cottage.jpg", "2024-04-05", "2024-04-11", true);
+        Room room6 = new Room("Mountain Chalet", "2024-04-06", 5, 250.0, 5,
+                                "Mountains", 110, "mountain_chalet.jpg", "2024-04-06", "2024-04-12", true);
+        new ConsoleApp3(room1).start();
+        new ConsoleApp3(room2).start();
+        new ConsoleApp3(room3).start();       
+        new ConsoleApp3(room4).start();       
+        new ConsoleApp3(room5).start();       
+        new ConsoleApp3(room6).start();       
     }
 }

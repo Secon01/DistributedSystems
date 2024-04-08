@@ -165,8 +165,8 @@ public class Room extends Request
                "Stars: " + this.stars + "\n" +  
                "Reviews: " + this.reviews + "\n" +
                "Image: " + this.roomName + "\n" +
-               "Available: " + this.reviews + "\n" +
-               "Start date: " + this.reviews + "\n" +
-               "End date: " + this.reviews + "\n";
+               "Available: " + this.available + "\n" +
+               "Start date: " + this.StartDate + "\n" +
+               "End date: " + this.EndDate;
     }
 }

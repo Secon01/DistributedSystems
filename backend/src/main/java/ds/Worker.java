@@ -74,7 +74,7 @@ public class Worker
     private void printRooms()
     {
         for(Room room : rooms) {
-            System.out.println(room.toString());
+            System.out.println(room.toString() + "\n" + "Index: " + rooms.indexOf(room));
         }
     }
 
@@ -132,6 +132,8 @@ public class Worker
                             result = true;   // properties are equal
                         } else {
                             result = false; // properties are not equal
+                            indexes.clear();
+                            break;
                         }
                     } else if(valueF == null || valueR == null || valueF.equals(0) || valueR.equals(0) || 
                             valueF.equals(0.0) || valueR.equals(0.0)) {
@@ -154,22 +156,14 @@ public class Worker
     // Returns an array of rooms according to given filters and passes the filters' id to rooms
     private RoomResult map(ArrayList<Integer> indx,  Filter filter) throws InterruptedException
     {          
-        Room resultRoom;
+        Room resultRoom;                                            // room result instance
         RoomResult results = new RoomResult();                      // initialize array
         if (!indx.isEmpty()) {                                      // if worker has a room with the given filter
             for(Integer index : indx) {                             // for room index in indexes array
-                System.out.println(indx.toString());
-                //synchronized(rooms) {        
-                    //results = new Results();
-                    resultRoom = rooms.get(index).copy();           // copy room
-                    //System.out.println(resultRoom);
-                    results.addRoom(resultRoom);                    // add copy of room in the results array
-                    //System.out.println(results.getRooms().toString() + " DEBUG!!! " + Thread.currentThread().threadId());
-                    results.setId(filter.getId());                           // set id of the selected room equal to filter's id        
-                    //System.out.println(results.getId() + " DEBUG!!! " + Thread.currentThread().threadId());
-                                    
+                resultRoom = rooms.get(index).copy();               // copy room
+                results.addRoom(resultRoom);                        // add copy of room in the results array
+                results.setId(filter.getId());                      // set id of the selected room equal to filter's id        
             }
-            //System.out.println("We found it!!");
         } else {
             System.out.println("No match!!");
             return null;
@@ -214,40 +208,38 @@ public class Worker
     // Opens worker's server side
     private void runServer(Socket connection) throws IOException, InterruptedException
     {
-        //System.out.println("Thread id: " + Thread.currentThread().getId());
         BufferedReader input = new BufferedReader(new InputStreamReader(connection.getInputStream()));      // get input stream in buffered reader
         OutputStream output = connection.getOutputStream();                                                 // get output stream from master's socket
-        //synchronized(input) {
-            String requestLine = input.readLine();                                                          // set request line 
-            if (requestLine == null || requestLine.isEmpty()) {
-                Thread.interrupted();  // kill thread
-            }
-            // Header check
-            if (requestLine.startsWith("POST /newRoom")) {               
-                System.out.println("Received new room request...");
-                handleNewRoomRequest(input, output);
-            } else if (requestLine.startsWith("POST /searchRoom")) {
-                //System.out.println("Received search room request...");
-                handleSearchRoomRequest(input, output);
-            } else {
-                sendNotImplementedResponse(output);
-            }
-            consumeRemainingRequest(input);
-            connection.close();                                                                                 // close socket    
-        //}
+        String requestLine = input.readLine();                                                              // set request line 
+        if (requestLine == null || requestLine.isEmpty()) {
+            Thread.interrupted();  // kill thread
+        }
+        // Header check
+        if (requestLine.startsWith("POST /newRoom")) {               
+            //System.out.println("Received new room request...");
+            handleNewRoomRequest(input, output);
+        } else if (requestLine.startsWith("POST /searchRoom")) {
+            //System.out.println("Received search room request...");
+            handleSearchRoomRequest(input, output);
+        } else {
+            sendNotImplementedResponse(output);
+        }
+        consumeRemainingRequest(input);
+        connection.close();                                                                                 // close socket    
+        //printRooms();
 	}
 
     // Handles requests for new room insertion
     private void handleNewRoomRequest(BufferedReader in, OutputStream out) throws IOException {
-        String jsonRoom = extractBody(in);                                                                // extract json from request body
+        String jsonRoom = extractBody(in);                                                                  // extract json from request body
         Room room = deserializeRoom(jsonRoom);                                                              // create filter object from json input file
-        System.out.println("->-> " + room.toString());
-        addRoom(room);                                                                                  // add room to array
+        System.out.println(room.toString() + "\n");
+        addRoom(room);                                                                                      // add room to array
+        //System.out.println("Received filter data: " + jsonRoom);
         //printRooms();
-        System.out.println("Received filter data: " + jsonRoom);
         sendHttpResponse(out, 200, "OK", "{\"message\":\"New room added\"}",
                              "application/json");                                               // send response for succesfull http request
-        System.out.println("Room added...");
+        //System.out.println("Room added...");
     }
     // Handles requests for searching room
     private void handleSearchRoomRequest(BufferedReader in, OutputStream out) throws IOException, InterruptedException {
@@ -255,10 +247,10 @@ public class Worker
         Filter filter = deserializeFilter(jsonFilter);                                                      // create filter object from json input file
         System.out.println("Received request: " + filter.getId() + " with " 
                         + filter.toString() + " is Thread: " + Thread.currentThread().threadId());
-        RoomResult resultRooms = map(hasRoom(filter), filter);                                          // get array with results for reducer
+        RoomResult resultRooms = map(hasRoom(filter), filter);                                              // get array with results for reducer
         String jsonResults = serializeResults(resultRooms);                                                 // serialize results to json
         System.out.println("->->->" + jsonResults);
-        if (jsonResults != null && !jsonResults.trim().isEmpty()) {                                                                            // if json with results is null
+        if (jsonResults != null && !jsonResults.trim().isEmpty()) {                                         // if json with results is not null
             sendHttpResponse(out, 200, "OK", jsonResults
             , "application/json");                                      // send response for succesfull http request                        
         } else {
@@ -328,7 +320,7 @@ public class Worker
         worker.giveReview("Villa", 3);
         System.out.println(room1.getStars());
         */
-        Thread.sleep(1000);
-        worker.printRooms(); 
+        //Thread.sleep(1000);
+        //worker.printRooms(); 
     }
 }
