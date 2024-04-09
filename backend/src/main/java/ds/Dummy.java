@@ -141,26 +141,29 @@ public class Dummy extends Thread {
       BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
       if (input.equals("search")){
          sendSearchRoomRequest(out);
+         String json = extractBody(in);
+         if(json == null) {
+            System.out.println("Room not found");
+            return;
+         }
+         Reducer reducer = new GsonBuilder().setPrettyPrinting().create().fromJson(json, Reducer.class);
+         //System.out.println(reducer.getResults() + " " + reducer.getCurrentID());
+         //reducer.printRooms();
+         synchronized(reducer) {
+            reducers.add(reducer);
+         }   
       }  else if(input.equals("book")) {
          sendBookRoomRequest(out);
          // Read the response
          String responseLine;
          while ((responseLine = in.readLine()) != null) {
             System.out.println(responseLine); 
-         }    
-         return;
+         }   
       } 
       else {
          System.out.println("Unknown command. Use 'getRoom' or 'newRoom'.");
          sc.close();                 // close scanner
          return;
-      }
-      String json = extractBody(in);
-      Reducer reducer = new GsonBuilder().setPrettyPrinting().create().fromJson(json, Reducer.class);
-      //System.out.println(reducer.getResults() + " " + reducer.getCurrentID());
-      //reducer.printRooms();
-      synchronized(reducer) {
-         reducers.add(reducer);
       }
       //reducer.printRooms();
       // Read the response
@@ -245,6 +248,7 @@ public class Dummy extends Thread {
          } 
       } else {
          // Book()         
+         new Dummy("Mountain Chalet").start();
          new Dummy("Mountain Chalet").start();
       }
    }  

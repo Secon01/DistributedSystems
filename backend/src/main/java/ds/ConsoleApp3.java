@@ -4,7 +4,10 @@ package ds;
 //import org.json.JSONException; //(not sure if needed yet)
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.LocalDate;
 import java.util.Scanner;
+import java.util.regex.Pattern;
+
 import org.json.JSONObject;
 
 import com.google.gson.Gson;
@@ -13,19 +16,25 @@ import java.io.*;
 import java.net.Socket;
 
 public class ConsoleApp3 extends Thread {
-    boolean done;
-    Scanner value1;
-    Scanner value2;
-    Scanner inp;
-    String end;
-    String start;
+    private boolean done;
+    private Scanner value1;
+    private Scanner value2;
+    private Scanner inp;
+    private String end;
+    private String start;
     static String finalJSOString;
+    private String regex = "\\d{4}-\\d{2}-\\d{2}";      // regular expression to match the format YYYY-MM-DD
 
     ConsoleApp3(Room room) throws IOException
     {
         finalJSOString = new Gson().toJson(room);
         System.out.println(finalJSOString);
         sendrequest();
+    }
+
+    ConsoleApp3()
+    {
+
     }
 
     public void welcome() {
@@ -82,14 +91,30 @@ public class ConsoleApp3 extends Thread {
                     String jsonString = JsonUtils.readFileToString(filePath); // convert file path of json to string
                     if (jsonString != null) {
                         JSONObject jsonObject = new JSONObject(jsonString);
-                        System.out.println("Main Indformation JSON File :\n" + jsonString);
-                        System.out.println("Give me your starting Date");
-                        value1 = new Scanner(System.in);
-                        start = value1.nextLine();
-                        jsonObject.put("StartDate", start);
-                        System.out.println("Give me your ending Date");
-                        value2 = new Scanner(System.in);
-                        end = value2.nextLine();
+                        System.out.println("Main Information JSON File :\n" + jsonString);
+                        System.out.println("Enter your starting date");
+                        // Check if the user input matches the desired format  
+                        while(true) {
+                            value1 = new Scanner(System.in);
+                            start = value1.nextLine();    
+                            if (Pattern.matches(regex, start)) {    // check if regular expression of date format matches user's input
+                                LocalDate startDate = LocalDate.parse(start);    // parse user input to local date object
+                                jsonObject.put("StartDate", startDate);
+                                break;
+                            } else {
+                                System.out.println("Invalid date format. Please enter date in YYYY-MM-DD format!");
+                            }                                                                        
+                        }  
+                        System.out.println("Enter your ending date");
+                        while (true) {
+                            value2 = new Scanner(System.in);
+                            end = value2.nextLine();                            
+                            if (Pattern.matches(regex, end)) {      // check if regular expression of date format matches user's input
+                                break;
+                            } else {
+                                System.out.println("Invalid date format. Please enter date in YYYY-MM-DD format!");
+                            }                                                                        
+                        }
                         jsonObject.put("EndDate", end);
                         finalJSOString = jsonObject.toString();
                         System.out.println("Final JSON File Content:\n" + finalJSOString);
@@ -111,7 +136,7 @@ public class ConsoleApp3 extends Thread {
                     e.printStackTrace();
                 } catch (JsonSyntaxException e) {
                     System.err.println("Error parsing JSON: " + e.getMessage());
-                }
+                } 
                 break;
             case 2:
                 System.out.println("These are your apartments' information:\n" + finalJSOString);
@@ -194,18 +219,18 @@ public class ConsoleApp3 extends Thread {
         Room room1 = new Room("Villa", null, 0, 40.0, 0, "Larisa", 0, null, null, null, true);
         Room room2 = new Room("HotelPoseidon", null, 0, 0, 0, "Athens", 0, null, null, null, true);
         Room room3 = new Room("StefFarm", null, 0, 0, 0, "Lamia", 0, null, null, null, true);
-        */
-        Room room1 = new Room("Luxury Suite", "2024-04-01", 2, 200.0, 5,
+        */ 
+        Room room1 = new Room("Luxury Suite", 2, 200.0, 5,
                                 "Downtown", 100, "luxury_suite.jpg", "2024-04-01", "2024-04-07", true);
-        Room room2 = new Room("Cozy Cabin", "2024-04-02", 4, 150.0, 4,
+        Room room2 = new Room("Cozy Cabin", 4, 150.0, 4,
                                 "Mountains", 80, "cozy_cabin.jpg", "2024-04-02", "2024-04-08", true);
-        Room room3 = new Room("Beach House", "2024-04-03", 6, 300.0, 5,
+        Room room3 = new Room("Beach House", 6, 300.0, 5,
                                 "Beachfront", 120, "beach_house.jpg", "2024-04-03", "2024-04-09", true);
-        Room room4 = new Room("City Apartment", "2024-04-04", 3, 180.0, 4,
+        Room room4 = new Room("City Apartment", 3, 180.0, 4,
                                 "Urban", 90, "city_apartment.jpg", "2024-04-04", "2024-04-10", true);
-        Room room5 = new Room("Country Cottage", "2024-04-05", 4, 160.0, 4,
+        Room room5 = new Room("Country Cottage", 4, 160.0, 4,
                                 "Rural", 85, "country_cottage.jpg", "2024-04-05", "2024-04-11", true);
-        Room room6 = new Room("Mountain Chalet", "2024-04-06", 5, 250.0, 5,
+        Room room6 = new Room("Mountain Chalet", 5, 250.0, 5,
                                 "Mountains", 110, "mountain_chalet.jpg", "2024-04-06", "2024-04-12", true);
         new ConsoleApp3(room1).start();
         new ConsoleApp3(room2).start();

@@ -149,7 +149,7 @@ public class Worker
                 //finalResult = true;                     // set final result equal to true
             }
         }
-        System.out.println("INDEXES: " + indexes + " Thread ID: " + Thread.currentThread().threadId());
+        //System.out.println("INDEXES: " + indexes + " Thread ID: " + Thread.currentThread().threadId());
         return indexes;
     }
     
@@ -181,15 +181,28 @@ public class Worker
     }
         
     // Set the room not available and does the booking
-    private void book(String roomName)
+    private synchronized boolean book(String roomName)
     {
-        for(Room room : rooms) {
-            if(room.getRoomName() == roomName) {
-                room.setAvailable(false);
-                //System.out.println(room.getAvailable());
-            }
-            System.out.println(room.getRoomName() + " is " + room.getAvailable());
-        }
+        boolean booked = false;                    
+        //System.out.println(roomName + " DEBUG " + Thread.currentThread().threadId());                                 // boolean flag
+        //synchronized(rooms) {
+            for(Room room : rooms) {
+                //System.out.println(roomName + " DEBUGFOR " + Thread.currentThread().threadId());
+                //System.out.println(room.getRoomName());                        
+                //synchronized(room) {
+                    if(room.getRoomName().equals(roomName) && room.getAvailable() == true) {     // if room name from method's aruments is current room's name and room is available 
+                        room.setAvailable(false);                                 // set room non available
+                        booked = true;                                                      // set flag to true
+                        //System.out.println(Thread.currentThread().threadId() + "DEBUG");
+                        break;
+                    } else {
+                        booked = false;                                                     // set flag to false
+                    }    
+                //}
+            }    
+        //}
+        //System.out.println(Thread.currentThread().threadId() + "  " + booked);
+        return booked;                                                                  // return flag
     }
 
     private void giveReview(String roomName ,int star){
@@ -221,6 +234,9 @@ public class Worker
         } else if (requestLine.startsWith("POST /searchRoom")) {
             //System.out.println("Received search room request...");
             handleSearchRoomRequest(input, output);
+        } else if(requestLine.startsWith("POST /bookRoom")) {
+            System.out.println("Received book room request...");
+            handleBookRoomRequest(input, output);
         } else {
             sendNotImplementedResponse(output);
         }
@@ -241,7 +257,7 @@ public class Worker
                              "application/json");                                               // send response for succesfull http request
         //System.out.println("Room added...");
     }
-    // Handles requests for searching room
+    // Handles requests for searching a room
     private void handleSearchRoomRequest(BufferedReader in, OutputStream out) throws IOException, InterruptedException {
         String jsonFilter = extractBody(in);                                                                // extract json from request body
         Filter filter = deserializeFilter(jsonFilter);                                                      // create filter object from json input file
@@ -249,15 +265,29 @@ public class Worker
                         + filter.toString() + " is Thread: " + Thread.currentThread().threadId());
         RoomResult resultRooms = map(hasRoom(filter), filter);                                              // get array with results for reducer
         String jsonResults = serializeResults(resultRooms);                                                 // serialize results to json
-        System.out.println("->->->" + jsonResults);
-        if (jsonResults != null && !jsonResults.trim().isEmpty()) {                                         // if json with results is not null
+        //System.out.println("->->->" + jsonResults);
+        if (jsonResults != null) {                                         // if json with results is not null
             sendHttpResponse(out, 200, "OK", jsonResults
-            , "application/json");                                      // send response for succesfull http request                        
-        } else {
-            sendHttpResponse(out, 404, "Not Found", "{\"message\":\"Room not found\"}"
+            , "application/json");                                                              // send response for successful http request                        
+        } else if(jsonResults == null) {
+            sendHttpResponse(out, 404, "Not Found", jsonResults
             , "application/json");
-            System.out.println("DEBUG");                                        // send response with results in json
+            System.out.println("DEBUG");                                                                  // send response for unsuccessful http request
         }
+    }
+    // Handles requests for booking
+    private void handleBookRoomRequest(BufferedReader in, OutputStream out) throws IOException {
+        String jsonRoomName = extractBody(in);                                                                  // extract json with room name from request body
+        String roomName = new Gson().fromJson(jsonRoomName, String.class);                             // create string with room name from json 
+        System.out.println(roomName + "\n");
+        if(book(roomName)) {                                                                                    // book room by name and check if it is booked
+            sendHttpResponse(out, 200, "OK", "{\"message\":\"Room booked\"}",
+            "application/json");                                                                    // send response for successful http request 
+        } else {
+            sendHttpResponse(out, 409, "Conflict", "{\"message\":\"Room already booked\"}", 
+            "application/json");                                                                    // send response for unsuccessful http request
+        }
+        //System.out.println("Room added...");
     }
 
     // Sends error message when the server is incapable of performing the request
@@ -301,7 +331,7 @@ public class Worker
     public static void main(String[] args) throws IOException, InterruptedException{
         Scanner sc = new Scanner(System.in);
         System.out.println("Enter port");
-        Worker worker = new Worker(sc.nextInt());
+        new Worker(sc.nextInt());
         sc.close();
         /*  
         Room room1 = new Room("Villa", null, 0, 0, 0, "Larisa", 0, null, null, null, true);

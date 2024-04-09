@@ -49,6 +49,7 @@ public class Master
             reducer.setCurrentID(filter.getId());
         }
     }
+
     // Hash function 
     private static int hashFunc(String roomName, int numOfWorkers) {
         int hashCode = roomName.hashCode();                         // hashing room's name
@@ -202,6 +203,11 @@ public class Master
                 String responseBody = null;                                
                 try {
                     responseBody = extractBody(inputWorker);                // extract json with results 
+                    if(responseBody == null) {
+                        sendHttpResponse(out, 404, "Not Found", "{\"message\":\"Room not found\"}"
+                        , "application/json");                  // send response for unsuccessful http request
+                        return;
+                    }
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -250,15 +256,53 @@ public class Master
     }
 
     // Handles requests for booking room
-    private void handleBookRoomRequest(BufferedReader in, OutputStream out) throws IOException {
-        String jsonString = extractBody(in);                                            // extract json with room name from request body
-        String roomName = new Gson().fromJson(jsonString, String.class);       // create string with room name from json
+    private void handleBookRoomRequest(BufferedReader in, OutputStream out) throws IOException, InterruptedException {
+        String jsonRoomName = extractBody(in);                                            // extract json with room name from request body
+        String roomName = new Gson().fromJson(jsonRoomName, String.class);       // create string with room name from json
         int workerID = hashFunc(roomName, workerConfig.nofWorkers);                     // hash room name and get worker id to send request  
         int workerPort = getPort(workerID);                                             // get port of selected worker
-        System.out.println(roomName);
+        Thread book  = new Thread(() -> {
+            Socket socket = null;
+            try {
+                socket = new Socket(hostname, workerPort);                              // open socket to worker's port
+            } catch (IOException e) {
+                e.printStackTrace();
+            }                               
+            PrintWriter outputWorker = null;
+            try {
+                outputWorker = new PrintWriter(socket.getOutputStream(), true);       // set output
+            } catch (IOException e) {
+                e.printStackTrace();
+            } 
+            try (BufferedReader inputWorker = new BufferedReader
+                                        (new InputStreamReader(socket.getInputStream()))) {
+                sendBookRoomRequest(outputWorker, jsonRoomName);                                   // send request
+                // Read the response
+                String responseLine;
+                while ((responseLine = inputWorker.readLine()) != null) {
+                    System.out.println(responseLine);                                       // print response message
+                    if(responseLine.startsWith("HTTP/1.1 409 Conflict")) {
+                        sendHttpResponse(out, 409, "Conflict", "{\"message\":\"Room already booked\"}", 
+                        "application/json");                                    // send response for unsuccessful http request            
+                    } else if(responseLine.startsWith("HTTP/1.1 200 OK")) {
+                        sendHttpResponse(out, 200, "OK", "{\"message\":\"Room booked\"}",
+                        "application/json");                                    // send response for successful http request             
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {
+                socket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }                                                                           // close socket
+        });
+        book.start();
+        book.join();
     }
 
-    // Sends http request for searching room to worker
+    // Sends http request for searching a room to worker
     private static void sendSearchRoomRequest(PrintWriter out, String jsonBody) {
         out.println("POST /searchRoom HTTP/1.1");
         out.println("Host: localhost");
@@ -269,7 +313,7 @@ public class Master
         out.println(jsonBody);
     }
 
-    // Sends http request for adding room to worker
+    // Sends http request for adding a room to worker
     private static void sendNewRoomRequest(PrintWriter out, String jsonBody) {
         out.println("POST /newRoom HTTP/1.1");
         out.println("Host: localhost");
@@ -279,6 +323,18 @@ public class Master
         out.println();
         out.println(jsonBody);
     }
+
+    // Sends http request for booking a room to worker
+    private static void sendBookRoomRequest(PrintWriter out, String jsonBody) {
+        out.println("POST /bookRoom HTTP/1.1");
+        out.println("Host: localhost");
+        out.println("Content-Type: application/json");
+        out.println("Content-Length: " + jsonBody.length());
+        out.println("Connection: close");
+        out.println();
+        out.println(jsonBody);
+    }
+
     // Sends error message when the server is incapable of performing the request
     private static void sendNotImplementedResponse(OutputStream out) throws IOException {
         sendHttpResponse(out, 501, "Not Implemented", "", "text/plain");

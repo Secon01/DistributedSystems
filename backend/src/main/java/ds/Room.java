@@ -6,32 +6,34 @@ import java.lang.reflect.Field;
 public class Room extends Request
 {
     private String roomName;
-    private String date;
     private int guests;
     private double price;
     private int stars;
     private String area;
     private int reviews;
     private String roomImage;
-    private String StartDate;
-    private String EndDate;
+    private String startDate;
+    private String endDate;
     private boolean available;
+    private DateRange dateRange;
 
     // Constructor
-    Room(String name, String date, int guests, double price, int stars,
+    Room(String name, int guests, double price, int stars,
             String area, int reviews, String image, String startDate, String endDate, boolean available)
     {
         this.roomName = name;
-        this.date = date;
         this.guests = guests;
         this.price = price;
         this.stars = stars;
         this.area = area;
         this.reviews = reviews;
         this.roomImage = image;
-        this.StartDate = startDate;
-        this.EndDate = endDate;
+        this.startDate = startDate;
+        this.endDate = endDate;
         this.available = available;
+        this.dateRange = new DateRange();
+        this.dateRange.setStartDate(startDate);
+        this.dateRange.setEndDate(endDate);
     }
     // Default constructor
     Room()
@@ -42,10 +44,6 @@ public class Room extends Request
     // Getters
     public String getRoomName() {
         return roomName;
-    }
-
-    public String getDate() {
-        return date;
     }
 
     public int getGuests() {
@@ -73,11 +71,11 @@ public class Room extends Request
     }
 
     public String getEndDate() {
-        return EndDate;
+        return endDate;
     }
 
     public String getStartDate() {
-        return StartDate;
+        return startDate;
     }
 
     public boolean getAvailable()
@@ -87,10 +85,6 @@ public class Room extends Request
     // Setters
     public void setRoomName(String roomName) {
         this.roomName = roomName;
-    }
-
-    public void setDate(String date) {
-        this.date = date;
     }
 
     public void setGuests(int guestNum) {
@@ -118,11 +112,11 @@ public class Room extends Request
     }
 
     public void setStartDate(String StartDate) {
-        this.StartDate = StartDate;
+        this.startDate = StartDate;
     }
 
     public void setEndDate(String EndDate) {
-        this.EndDate = EndDate;
+        this.endDate = EndDate;
     }
     
     public void setAvailable(boolean available) {
@@ -151,22 +145,21 @@ public class Room extends Request
     // Copies this object to another
     public Room copy()
     {
-        return new Room(this.roomName, this.date, this.guests, this.price, 
-                        this.stars, this.area, this.reviews, this.roomImage, this.StartDate, this.EndDate, this.available);
+        return new Room(this.roomName, this.guests, this.price, 
+                        this.stars, this.area, this.reviews, this.roomImage, this.startDate, this.endDate, this.available);
     }
 
     public String toString()
     {
         return "Name: " + this.roomName + "\n" +
                "Area: " + this.area + "\n" +         
-               "Date: " + this.date + "\n" + 
                "Number of guests: " + this.guests + "\n" + 
                "Price: " + this.price + "\n" + 
                "Stars: " + this.stars + "\n" +  
                "Reviews: " + this.reviews + "\n" +
                "Image: " + this.roomName + "\n" +
                "Available: " + this.available + "\n" +
-               "Start date: " + this.StartDate + "\n" +
-               "End date: " + this.EndDate;
+               "Start date: " + this.startDate + "\n" +
+               "End date: " + this.endDate;
     }
 }
