@@ -6,34 +6,61 @@ public class DateRange
 {
     private LocalDate startDate;                                    // start date of date range
     private LocalDate endDate;                                      // start date of date range
-    /* 
-    // Date range constructor
-    public DateRange(LocalDate startDate, LocalDate endDate) 
-    {
-        this.startDate = startDate;                                 // initialize start date
-        this.endDate = endDate;                                     // initialize end date
-    }
-    */
     // Getters, setters
-    public LocalDate getStartDate() {
+    public LocalDate getStartDate() 
+    {
         return startDate;
     }
 
-    public LocalDate getEndDate() {
+    public LocalDate getEndDate() 
+    {
         return endDate;
     }
 
-    public void setStartDate(String startDate) {
+    public void setStartDate(String startDate) 
+    {
         this.startDate = LocalDate.parse(startDate);                // parse a given string to local date object
     }
 
-    public void setEndDate(String endDate) {
+    public void setEndDate(String endDate) 
+    {
         this.endDate = LocalDate.parse(endDate);                    // parse a given string to local date object
     }
 
-    // Checks if the given date is in range
-    public boolean isInRange(LocalDate date) {
+    // Checks if the given local date object is in range of this date range object
+    public boolean isInRange(LocalDate date) 
+    {
         return !date.isBefore(startDate) && !date.isAfter(endDate);
+    }
+
+    // Checks if one date range object is within the range of this date range object
+    public boolean isWithinRange(DateRange other) 
+    {
+        if(this.getStartDate() == null || this.getEndDate() == null) {
+            return false;
+        }
+        return !this.startDate.isBefore(other.startDate) && !this.endDate.isAfter(other.endDate);
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if(this == obj) {
+            return true;
+        }
+        if (obj == null || DateRange.class != obj.getClass()) {
+            return false;
+        }
+        DateRange other = (DateRange) obj;
+        if(other.getStartDate() == null || other.getEndDate() == null) {
+            return false;
+        }
+        return this.isWithinRange(other);
+    }
+
+    public String toString()
+    {
+        return "[" + startDate + " - " + endDate + "]";
     }
 
     public static void main(String[] args) {

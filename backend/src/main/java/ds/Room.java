@@ -16,7 +16,6 @@ public class Room extends Request
     private String endDate;
     private boolean available;
     private DateRange dateRange;
-
     // Constructor
     Room(String name, int guests, double price, int stars,
             String area, int reviews, String image, String startDate, String endDate, boolean available)
@@ -42,6 +41,10 @@ public class Room extends Request
     }
 
     // Getters
+    public DateRange getDateRange() {
+        return dateRange;
+    }
+
     public String getRoomName() {
         return roomName;
     }

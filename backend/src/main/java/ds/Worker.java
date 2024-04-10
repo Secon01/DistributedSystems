@@ -8,6 +8,7 @@ import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Scanner;
 import com.google.gson.Gson;
@@ -17,9 +18,9 @@ public class Worker
 {
     private ArrayList<Room> rooms;                                                  // rooms array
     //private Results results;
-    private String[] propertyNames = {"area", "date", "guests", "price", "stars"};  // array with common properties of Room and Filter 
-    private static ServerSocket serverSocket;                                       // server socket 
-    //private ArrayList<Integer> indexes;                                             // array to collect room indexes of rooms 
+    private String[] propertyNames = {"area", "dateRange", "guests", "price", "stars"}; // array with common properties of Room and Filter 
+    private static ServerSocket serverSocket;                                           // server socket 
+    //private ArrayList<Integer> indexes;                                               // array to collect room indexes of rooms 
     //private static ArrayList<Filter> filters;
 
     // Default constructor
@@ -81,13 +82,19 @@ public class Worker
     // Deserializes json file to a filter object
     private Filter deserializeFilter(String json)
     {
-        return new Gson().fromJson(json, Filter.class);
+        Gson gson = new GsonBuilder()
+            .registerTypeAdapter(LocalDate.class, new LocalDateDeserializer())
+            .create();
+        return gson.fromJson(json, Filter.class);
     }
 
     // Deserializes json file to a room object
     private Room deserializeRoom(String json)
     {
-        return new Gson().fromJson(json, Room.class);
+        Gson gson = new GsonBuilder()
+            .registerTypeAdapter(LocalDate.class, new LocalDateDeserializer())
+            .create();
+        return gson.fromJson(json, Room.class);
     }    
 
     // Checking if worker has a room according to the incoming filter
@@ -122,14 +129,15 @@ public class Worker
                     fieldR.setAccessible(true);
                     Object valueF = fieldF.get(filter);
                     Object valueR = fieldR.get(room);
-                    //System.out.println(propertyName + ":" + valueF + " DEBUG");
-                    //System.out.println(propertyName + ":" + valueR + " DEBUG");
+                    System.out.println(propertyName + ":" + valueF + " DEBUG");
+                    System.out.println(propertyName + ":" + valueR + " DEBUG");
     
                     // Both values are not null or 0, compare them
                     if (valueF != null && valueR != null && !valueF.equals(0) && !valueR.equals(0) && 
                         !valueF.equals(0.0) && !valueR.equals(0.0)) {
                         if (valueF.equals(valueR)) {
                             result = true;   // properties are equal
+                            System.out.println("Yes!" + valueF);
                         } else {
                             result = false; // properties are not equal
                             indexes.clear();
@@ -175,7 +183,9 @@ public class Worker
     // Serialize results of worker's to Json 
     private String serializeResults(RoomResult resRooms)
     {
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        Gson gson = new GsonBuilder()
+        .registerTypeAdapter(LocalDate.class, new LocalDateSerializer())
+        .create();
         String jsonResults = gson.toJson(resRooms);
         return jsonResults;
     }

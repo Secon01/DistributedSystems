@@ -8,6 +8,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import ds.JsonConverter.JsonUtils;
 import com.google.gson.Gson;
@@ -62,26 +63,46 @@ public class Master
     // Deserializes json to a filter object
     private Filter deserializeFilter(String json)
     {
-        return new Gson().fromJson(json, Filter.class);
+        Gson gson = new GsonBuilder()
+            .registerTypeAdapter(LocalDate.class, new LocalDateDeserializer())
+            .create();
+        return gson.fromJson(json, Filter.class);
     }
 
     // Deserializes json file to a room object
     private Room deserializeRoom(String json)
     {
-        return new Gson().fromJson(json, Room.class);
+        Gson gson = new GsonBuilder()
+            .registerTypeAdapter(LocalDate.class, new LocalDateDeserializer())
+            .create();
+        return gson.fromJson(json, Room.class);
     }    
 
     // Serializes filter object to json 
     private String serializeFilter(Filter filter)
     {
-        return new Gson().toJson(filter);
+        Gson gson = new GsonBuilder()
+            .registerTypeAdapter(LocalDate.class, new LocalDateSerializer())
+            .create();
+        return gson.toJson(filter);
     }
 
     // Deserialize json to results  
     private RoomResult deserializeResults(String json)
     {
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        Gson gson = new GsonBuilder()
+        .registerTypeAdapter(LocalDate.class, new LocalDateDeserializer())
+        .create();
         return gson.fromJson(json, RoomResult.class);
+    }
+
+    // Serialize reducer object to json 
+    private String serializeReducer(Reducer reducer)
+    {
+        Gson gson = new GsonBuilder()
+            .registerTypeAdapter(LocalDate.class, new LocalDateSerializer())
+            .create();
+        return gson.toJson(reducer);
     }
 
     // Opens master's server side
@@ -248,8 +269,7 @@ public class Master
         try {
             // Send response for succesfull http request
             sendHttpResponse(out, 200, "OK", 
-            new GsonBuilder().setPrettyPrinting().create().toJson(reducer)
-            , "application/json");
+            serializeReducer(reducer) , "application/json");
         } catch (IOException e) {
             e.printStackTrace();
         }                                                 

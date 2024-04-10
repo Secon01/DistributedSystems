@@ -7,13 +7,13 @@ import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.Scanner;
 import java.util.regex.Pattern;
-
 import org.json.JSONObject;
-
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
 import java.io.*;
 import java.net.Socket;
+
 
 public class ConsoleApp3 extends Thread {
     private boolean done;
@@ -27,7 +27,10 @@ public class ConsoleApp3 extends Thread {
 
     ConsoleApp3(Room room) throws IOException
     {
-        finalJSOString = new Gson().toJson(room);
+        Gson gson = new GsonBuilder()
+            .registerTypeAdapter(LocalDate.class, new LocalDateSerializer())
+            .create();
+        finalJSOString= gson.toJson(room);
         System.out.println(finalJSOString);
         sendrequest();
     }
@@ -98,8 +101,7 @@ public class ConsoleApp3 extends Thread {
                             value1 = new Scanner(System.in);
                             start = value1.nextLine();    
                             if (Pattern.matches(regex, start)) {    // check if regular expression of date format matches user's input
-                                LocalDate startDate = LocalDate.parse(start);    // parse user input to local date object
-                                jsonObject.put("StartDate", startDate);
+                                jsonObject.put("StartDate", start);
                                 break;
                             } else {
                                 System.out.println("Invalid date format. Please enter date in YYYY-MM-DD format!");
@@ -110,12 +112,12 @@ public class ConsoleApp3 extends Thread {
                             value2 = new Scanner(System.in);
                             end = value2.nextLine();                            
                             if (Pattern.matches(regex, end)) {      // check if regular expression of date format matches user's input
+                                jsonObject.put("EndDate", end);
                                 break;
                             } else {
                                 System.out.println("Invalid date format. Please enter date in YYYY-MM-DD format!");
                             }                                                                        
                         }
-                        jsonObject.put("EndDate", end);
                         finalJSOString = jsonObject.toString();
                         System.out.println("Final JSON File Content:\n" + finalJSOString);
 
@@ -232,11 +234,25 @@ public class ConsoleApp3 extends Thread {
                                 "Rural", 85, "country_cottage.jpg", "2024-04-05", "2024-04-11", true);
         Room room6 = new Room("Mountain Chalet", 5, 250.0, 5,
                                 "Mountains", 110, "mountain_chalet.jpg", "2024-04-06", "2024-04-12", true);
+                                          
         new ConsoleApp3(room1).start();
         new ConsoleApp3(room2).start();
         new ConsoleApp3(room3).start();       
         new ConsoleApp3(room4).start();       
         new ConsoleApp3(room5).start();       
-        new ConsoleApp3(room6).start();       
+        new ConsoleApp3(room6).start();      
+        /* 
+        Gson gson = new GsonBuilder()
+            .registerTypeAdapter(LocalDate.class, new LocalDateSerializer())
+            .create();
+        String json = gson.toJson(room1);
+        System.out.println(json);
+    
+        Gson gson2 = new GsonBuilder()
+            .registerTypeAdapter(LocalDate.class, new LocalDateDeserializer())
+            .create();
+        Room room = gson2.fromJson(json, Room.class);
+        System.out.println(room.toString());
+        */
     }
 }

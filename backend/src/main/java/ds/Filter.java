@@ -6,10 +6,15 @@ import java.lang.reflect.Field;
 public class Filter extends Request
 {
     private String area;
-    private String date;
+    private DateRange dateRange;
     private int guests;
     private double price;
     private int stars;
+
+    Filter()
+    {
+        this.dateRange = new DateRange();
+    }
 
     // Setters for filter attributes
     public void setArea(String a)
@@ -17,9 +22,10 @@ public class Filter extends Request
         this.area = a;
     }
 
-    public void setDate(String d)
+    public void setDate(String start, String end)
     {
-        this.date = d;
+        this.dateRange.setStartDate(start);      // set end date of date range 
+        this.dateRange.setEndDate(end);          // set end date of date range 
     }
 
     public void setGuests(int g)
@@ -42,8 +48,8 @@ public class Filter extends Request
         return area;
     }
 
-    public String getDate() {
-        return date;
+    public DateRange getDate() {
+        return dateRange;
     }
 
     public int getGuests() {
@@ -80,7 +86,7 @@ public class Filter extends Request
 
     public String toString()
     {
-        return "[" + this.area + ", " + this.date + ", " + this.guests + 
+        return "[" + this.area + ", " + this.dateRange.toString() + ", " + this.guests + 
                 ", " + this.price + ", " + this.stars + "]";
     }
 }

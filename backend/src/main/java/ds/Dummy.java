@@ -7,9 +7,12 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Scanner;
+import java.util.regex.Pattern;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -23,11 +26,12 @@ public class Dummy extends Thread {
    public static String input;
    private static ArrayList<Reducer> reducers;        // array list with reducer objects for printing
    private static String roomName;                           // room name for booking
+   private String regex = "\\d{4}-\\d{2}-\\d{2}";      // regular expression to match the format YYYY-MM-DD
 
-   Dummy(String area, String date, int guests, double price, int stars) {
+   Dummy(String area, String startDate, String endDate, int guests, double price, int stars) {
       this.filter = new Filter();
       this.filter.setArea(area);
-      this.filter.setDate(date);
+      this.filter.setDate(startDate, endDate);
       this.filter.setGuests(guests);
       this.filter.setPrice(price);
       this.filter.setStars(stars);
@@ -39,8 +43,10 @@ public class Dummy extends Thread {
       Dummy.roomName = roomName;
    }
 
-   Dummy() 
+   Dummy() throws InterruptedException 
    {
+      this.filter = new Filter();
+      runMenu();
    }
 
    public void header() {
@@ -53,7 +59,7 @@ public class Dummy extends Thread {
       System.out.println();
       System.out.println("Please select a number for filtering or press 6 to continue for booking. If you want to exit press 0.");
       System.out.println(" 1) Area");
-      System.out.println(" 2) Date");
+      System.out.println(" 2) Date Range");
       System.out.println(" 3) Number of guests");
       System.out.println(" 4) Price");
       System.out.println(" 5) Number of stars");
@@ -61,7 +67,7 @@ public class Dummy extends Thread {
       System.out.println(" 0) Exit");
    }
 
-   public void runMenu() {
+   public void runMenu() throws InterruptedException {
       this.header();
 
       while(!this.exit) {
@@ -86,7 +92,7 @@ public class Dummy extends Thread {
       return choice;
    }
 
-   public void performAction(int choice) {
+   public void performAction(int choice) throws InterruptedException {
       switch (choice) {
          case 0:
             System.out.println("Thank you for using HouseBooking!");
@@ -97,8 +103,29 @@ public class Dummy extends Thread {
             this.filter.setArea(this.sc.nextLine());
             break;
          case 2:
-            System.out.println("Enter a date");
-            this.filter.setDate(this.sc.nextLine());
+            System.out.println("Enter a starting date");
+            // Check if the user input matches the desired format  
+            String startDate = null;
+            while(true) {
+               Scanner start = new Scanner(System.in);
+               startDate = start.nextLine();    
+               if (Pattern.matches(regex, startDate)) {    // check if regular expression of date format matches user's input
+                  break;
+               } else {
+                  System.out.println("Invalid date format. Please enter date in YYYY-MM-DD format!");
+               }                                                                        
+            }  
+            System.out.println("Enter your ending date");
+            while (true) {
+               Scanner end = new Scanner(System.in);
+               String endDate = end.nextLine();                            
+               if (Pattern.matches(regex, endDate)) {      // check if regular expression of date format matches user's input
+                  this.filter.setDate(startDate, endDate);
+                  break;
+               } else {
+                  System.out.println("Invalid date format. Please enter date in YYYY-MM-DD format!");
+               }                                                                        
+            }            
             break;
          case 3:
             System.out.println("Enter a number of guests");
@@ -112,6 +139,13 @@ public class Dummy extends Thread {
             System.out.println("Enter a number of stars");
             this.filter.setStars(Integer.parseInt(this.sc.nextLine()));
          case 6:
+            input = "search";
+            search();
+            Scanner rn = new Scanner(System.in);
+            System.out.println("Type the name of the room you wish to book");
+            Dummy.roomName = rn.nextLine();
+            input = "book";
+            book();
             break;
          default:
             System.out.println("An unknown error has occured!");
@@ -122,12 +156,36 @@ public class Dummy extends Thread {
    private void search() throws InterruptedException
    {
       reducers = new ArrayList<>();       // intialize arraylist with reduce objects
-      new Dummy().start();                        // create request thread and send it to master
+      this.start();                        // create request thread and send it to master
+      Thread.sleep(1000);
       Collections.sort(reducers);         // sort reducers array list based on current id
       for(Reducer reducer : reducers) {   // for each reducer obejct in reducers arraylist
          reducer.printRooms();            // print results
       }
    }
+
+   private void book()
+   {
+      this.start();
+   }
+
+   // Serializes filter object to json 
+   private String serializeFilter(Filter filter)
+   {
+      Gson gson = new GsonBuilder()
+         .registerTypeAdapter(LocalDate.class, new LocalDateSerializer())
+         .create();
+      return gson.toJson(filter);
+   }
+
+    // Deserialize json to reducer object  
+    private Reducer deserializeReducer(String json)
+    {
+        Gson gson = new GsonBuilder()
+            .registerTypeAdapter(LocalDate.class, new LocalDateDeserializer())
+            .create();
+        return gson.fromJson(json, Reducer.class);
+    }
 
    public void run() 
    {
@@ -146,7 +204,7 @@ public class Dummy extends Thread {
             System.out.println("Room not found");
             return;
          }
-         Reducer reducer = new GsonBuilder().setPrettyPrinting().create().fromJson(json, Reducer.class);
+         Reducer reducer = deserializeReducer(json);
          //System.out.println(reducer.getResults() + " " + reducer.getCurrentID());
          //reducer.printRooms();
          synchronized(reducer) {
@@ -184,36 +242,36 @@ public class Dummy extends Thread {
       }         
    }
 
-    // Extracts body from http search room request
-    private static String extractBody(BufferedReader in) throws IOException 
-    {
-    StringBuilder requestBody = new StringBuilder();    // build the body of request into string
-    String line;                                        // represents each line of http header
-    // Extract content length
-    int contentLength = 0;
-        while (!(line = in.readLine()).isEmpty()) {
+   // Extracts body from http search room request
+   private static String extractBody(BufferedReader in) throws IOException 
+   {
+   StringBuilder requestBody = new StringBuilder();    // build the body of request into string
+   String line;                                        // represents each line of http header
+   // Extract content length
+   int contentLength = 0;
+      while (!(line = in.readLine()).isEmpty()) {
             if (line.toLowerCase().startsWith("content-length:")) {
-                contentLength = Integer.parseInt(line.substring("content-length:".length()).trim());
+               contentLength = Integer.parseInt(line.substring("content-length:".length()).trim());
             }
-        }    
-        // Read the body
-        if (contentLength > 0) {
+      }    
+      // Read the body
+      if (contentLength > 0) {
             char[] buffer = new char[contentLength];
             in.read(buffer, 0, contentLength);
             requestBody.append(new String(buffer));
-        }
-        return requestBody.toString();
-    }
+      }
+      return requestBody.toString();
+   }
 
    private void sendSearchRoomRequest(PrintWriter out) {
-        String jsonBody = new Gson().toJson(filter);
-        out.println("POST /searchRoom HTTP/1.1");
-        out.println("Host: localhost");
-        out.println("Content-Type: application/json");
-        out.println("Content-Length: " + jsonBody.length());
-        out.println("Connection: close");
-        out.println();
-        out.println(jsonBody);
+      String jsonBody = serializeFilter(this.filter);
+      out.println("POST /searchRoom HTTP/1.1");
+      out.println("Host: localhost");
+      out.println("Content-Type: application/json");
+      out.println("Content-Length: " + jsonBody.length());
+      out.println("Connection: close");
+      out.println();
+      out.println(jsonBody);
    }
 
    private void sendBookRoomRequest(PrintWriter out) {
@@ -225,9 +283,11 @@ public class Dummy extends Thread {
       out.println("Connection: close");
       out.println();
       out.println(jsonBody);
- }
+   }
 
    public static void main(String[] args) throws IOException, InterruptedException {
+      new Dummy();
+      /* 
       sc = new Scanner(System.in);
       System.out.println("Give input");
       input = sc.nextLine();
@@ -238,8 +298,9 @@ public class Dummy extends Thread {
          for(int i = 0; i < 1; i++) {
             //(new Dummy("Larisa", "3/4/24", 3, 30.0, 3)).start();
             //(new Dummy("Lamia", "4/4/24", 2, 40.0, 4)).start(); 
-            (new Dummy("Downtown", null, 0, 180.0, 0)).start();
-            (new Dummy("Mountains", null, 0, 0.0, 5)).start(); 
+            //(new Dummy("Downtown", "2024-04-01", "2024-04-06", 0, 180.0, 0)).start();
+            (new Dummy("Mountains", "2024-04-05", "2024-04-11", 0, 0.0, 5)).start(); 
+            (new Dummy("Mountains", "2024-04-07", "2024-04-11", 0, 0.0, 5)).start(); 
          }
          Thread.sleep(1000);
          Collections.sort(reducers);         // sort reducers array list based on current id
@@ -251,5 +312,6 @@ public class Dummy extends Thread {
          new Dummy("Mountain Chalet").start();
          new Dummy("Mountain Chalet").start();
       }
+      */
    }  
 }
