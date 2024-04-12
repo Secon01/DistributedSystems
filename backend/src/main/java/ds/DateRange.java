@@ -1,6 +1,5 @@
 package ds;
 import java.time.LocalDate;
-import java.util.Scanner;
 
 public class DateRange  
 {
@@ -36,26 +35,25 @@ public class DateRange
     // Checks if one date range object is within the range of this date range object
     public boolean isWithinRange(DateRange other) 
     {
-        if(this.getStartDate() == null || this.getEndDate() == null) {
-            return false;
-        }
         return !this.startDate.isBefore(other.startDate) && !this.endDate.isAfter(other.endDate);
     }
 
+    // Override equals method to compare if a given data range object 
+    // is within the range of this data range object
     @Override
     public boolean equals(Object obj)
     {
-        if(this == obj) {
+        if(this == obj) {                                           // if two objects are the same 
             return true;
         }
-        if (obj == null || DateRange.class != obj.getClass()) {
+        if (obj == null || DateRange.class != obj.getClass()) {     // if given obj is null or its class isn't DataRange 
             return false;
         }
-        DateRange other = (DateRange) obj;
-        if(other.getStartDate() == null || other.getEndDate() == null) {
+        if (this.getStartDate() == null || this.getEndDate() == null) {
             return false;
         }
-        return this.isWithinRange(other);
+        DateRange other = (DateRange) obj;                          // cast given object to data range object
+        return this.isWithinRange(other);                           // return boolean value of isWithinRange method
     }
 
     public String toString()
@@ -64,6 +62,7 @@ public class DateRange
     }
 
     public static void main(String[] args) {
+        /* 
         Scanner sc = new Scanner(System.in);
         System.out.print("Enter the date (YYYY-MM-DD): ");
         String userInput = sc.nextLine();
@@ -75,5 +74,17 @@ public class DateRange
             System.out.println("Invalid date format. Please enter date in YYYY-MM-DD format.");
         }
         sc.close();
+        */
+
+        DateRange dr = new DateRange();
+        dr.setStartDate("2024-04-02");
+        dr.setEndDate("2024-04-08");
+
+        DateRange dr2 = new DateRange();
+        dr2.setStartDate("2024-04-02");
+        dr2.setEndDate("2024-04-07");
+
+        System.out.println(dr2.isWithinRange(dr));
+        System.out.println(dr2.equals(dr));
     }
 }

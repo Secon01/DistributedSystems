@@ -1,6 +1,9 @@
 package ds;
 
 import java.lang.reflect.Field;
+import java.util.UUID;
+
+import com.google.gson.Gson;
 
 // Room Class
 public class Room extends Request
@@ -17,9 +20,10 @@ public class Room extends Request
     private boolean available;
     private DateRange dateRange;
     // Constructor
-    Room(String name, int guests, double price, int stars,
+    Room(int id, String name, int guests, double price, int stars,
             String area, int reviews, String image, String startDate, String endDate, boolean available)
     {
+        this.setManagerID(id);      
         this.roomName = name;
         this.guests = guests;
         this.price = price;
@@ -33,6 +37,21 @@ public class Room extends Request
         this.dateRange = new DateRange();
         this.dateRange.setStartDate(startDate);
         this.dateRange.setEndDate(endDate);
+    }
+    // Constructor for null values of start & end dates
+    // because of LocalDate parse() method
+    Room(int id, String name, int guests, double price, int stars,
+        String area, int reviews, String image, boolean available)
+    {
+        this.setManagerID(id);
+        this.roomName = name;
+        this.guests = guests;
+        this.price = price;
+        this.stars = stars;
+        this.area = area;
+        this.reviews = reviews;
+        this.roomImage = image;
+        this.available = available;
     }
     // Default constructor
     Room()
@@ -134,8 +153,14 @@ public class Room extends Request
             field.setAccessible(true);
             try {
                 Object value = field.get(this);
-
-                if(value != null && !value.equals(0) && !value.equals(0.0)) {
+                if(value != null && value.getClass() == DateRange.class) {                      // if value of field belongs to data range class
+                    DateRange dateRange = (DateRange) value;                                    // cast value to data range object
+                    if(dateRange.getStartDate() == null || dateRange.getEndDate() == null) {    // if start date or end date is null  
+                        continue;
+                    } else {
+                        count++;
+                    }
+                } else if(value != null && !value.equals(0) && !value.equals(0.0)) {
                     count++;
                 }
             } catch (IllegalAccessException e) {
@@ -148,8 +173,13 @@ public class Room extends Request
     // Copies this object to another
     public Room copy()
     {
-        return new Room(this.roomName, this.guests, this.price, 
-                        this.stars, this.area, this.reviews, this.roomImage, this.startDate, this.endDate, this.available);
+        if(this.startDate == null || this.endDate == null) {
+            return new Room(this.getManagerID(), this.roomName, this.guests, this.price, 
+            this.stars, this.area, this.reviews, this.roomImage, this.available);
+        } else {
+            return new Room(this.getManagerID(), this.roomName, this.guests, this.price, 
+            this.stars, this.area, this.reviews, this.roomImage, this.startDate, this.endDate, this.available);
+        }
     }
 
     public String toString()
@@ -163,6 +193,15 @@ public class Room extends Request
                "Image: " + this.roomName + "\n" +
                "Available: " + this.available + "\n" +
                "Start date: " + this.startDate + "\n" +
-               "End date: " + this.endDate;
+               "End date: " + this.endDate + "\n" +
+               "Id: " + this.getId(); 
+    }
+
+    public static void main(String[] args) {
+        UUID id = UUID.randomUUID();
+        //System.out.println(id);
+
+        String json = new Gson().toJson(id);
+        System.out.println(json);
     }
 }

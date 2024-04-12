@@ -13,7 +13,11 @@ public class Filter extends Request
 
     Filter()
     {
+        this.area = null;
         this.dateRange = new DateRange();
+        this.guests = 0;
+        this.price = 0.0;
+        this.stars = 0;
     }
 
     // Setters for filter attributes
@@ -73,8 +77,14 @@ public class Filter extends Request
             field.setAccessible(true);
             try {
                 Object value = field.get(this);
-
-                if(value != null && !value.equals(0) && !value.equals(0.0)) {
+                if(value != null && value.getClass() == DateRange.class) {                      // if value of field belongs to data range class
+                    DateRange dateRange = (DateRange) value;                                    // cast value to data range object
+                    if(dateRange.getStartDate() == null || dateRange.getEndDate() == null) {    // if start date or end date is null  
+                        continue;
+                    } else {
+                        count++;
+                    }
+                } else if(value != null && !value.equals(0) && !value.equals(0.0)) {
                     count++;
                 }
             } catch (IllegalAccessException e) {

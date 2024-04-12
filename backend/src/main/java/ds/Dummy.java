@@ -69,7 +69,6 @@ public class Dummy extends Thread {
 
    public void runMenu() throws InterruptedException {
       this.header();
-
       while(!this.exit) {
          this.menu();
          int choice = this.getInput();
@@ -156,7 +155,7 @@ public class Dummy extends Thread {
    private void search() throws InterruptedException
    {
       reducers = new ArrayList<>();       // intialize arraylist with reduce objects
-      this.start();                        // create request thread and send it to master
+      this.run();                        // create request thread and send it to master
       Thread.sleep(1000);
       Collections.sort(reducers);         // sort reducers array list based on current id
       for(Reducer reducer : reducers) {   // for each reducer obejct in reducers arraylist
@@ -164,9 +163,10 @@ public class Dummy extends Thread {
       }
    }
 
+   // Sends request for booking a room
    private void book()
    {
-      this.start();
+      this.run();
    }
 
    // Serializes filter object to json 
@@ -196,8 +196,8 @@ public class Dummy extends Thread {
          e.printStackTrace();
       }
       try (PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-      BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
-      if (input.equals("search")){
+         BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+      if (input.equals("search")) {
          sendSearchRoomRequest(out);
          String json = extractBody(in);
          if(json == null) {
@@ -286,7 +286,7 @@ public class Dummy extends Thread {
    }
 
    public static void main(String[] args) throws IOException, InterruptedException {
-      new Dummy();
+      new Dummy().start();
       /* 
       sc = new Scanner(System.in);
       System.out.println("Give input");
@@ -295,12 +295,13 @@ public class Dummy extends Thread {
       if(input .equals("search")) {
          // Search()
          reducers = new ArrayList<>(); 
-         for(int i = 0; i < 1; i++) {
+         for(int i = 0; i < 4; i++) {
             //(new Dummy("Larisa", "3/4/24", 3, 30.0, 3)).start();
             //(new Dummy("Lamia", "4/4/24", 2, 40.0, 4)).start(); 
             //(new Dummy("Downtown", "2024-04-01", "2024-04-06", 0, 180.0, 0)).start();
-            (new Dummy("Mountains", "2024-04-05", "2024-04-11", 0, 0.0, 5)).start(); 
-            (new Dummy("Mountains", "2024-04-07", "2024-04-11", 0, 0.0, 5)).start(); 
+            //new Dummy(null, "2024-04-02", "2024-04-07", 0, 0.0, 0).start(); 
+            (new Dummy(null, "2024-04-06", "2024-04-07", 0, 0.0, 4)).start(); 
+            //new Dummy().start();
          }
          Thread.sleep(1000);
          Collections.sort(reducers);         // sort reducers array list based on current id
@@ -309,8 +310,8 @@ public class Dummy extends Thread {
          } 
       } else {
          // Book()         
-         new Dummy("Mountain Chalet").start();
-         new Dummy("Mountain Chalet").start();
+         new Dummy("Cozy Cabin").start();
+         //new Dummy("Mountain Chalet").start();
       }
       */
    }  

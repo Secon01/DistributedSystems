@@ -37,6 +37,7 @@ public class RoomResult
     {
         for(Room room : rooms) {
             System.out.println(room.toString());
+            System.out.println();
         }
     }
 }

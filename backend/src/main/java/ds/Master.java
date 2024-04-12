@@ -16,16 +16,14 @@ import com.google.gson.GsonBuilder;
 
 public class Master
 {
-    private Request request;                        // request instance
     public static WorkerConfig workerConfig;        // workers configuration instance
-    private static ServerSocket serverSocket;              // server socker 
-	//private Socket connection = null;            // set connec null
+    private static ServerSocket serverSocket;       // server socker 
     private static int port = 8000;                 // set port of master
     private static String hostname = "localhost";   // host name      
+    private static int requestID = 0;               // id for request
     // Master constructor
     Master() throws IOException
     {
-        request = new Request();
         serverSocket = new ServerSocket(port);                           // create socket
         System.out.println("Master is listening on port " + port);
         while(true) {
@@ -41,14 +39,25 @@ public class Master
             }).start();
         }
     }
+    // Give unique number in order in the next request
+    private synchronized int getUniqueNumber() {
+        return requestID++;               
+    }
 
     // Sets unique id to each request with filters
-    private void setRequestID(Request req, Filter filter, Reducer reducer)
+    private void setRequestIDFilter(Filter filter, Reducer reducer)
     {
-        synchronized(req) {
-            filter.setId(req.generateUniqueNumber());
+        //synchronized(req) {
+            filter.setId(getUniqueNumber());
             reducer.setCurrentID(filter.getId());
-        }
+        //}
+    }
+
+    // Sets unique id to each request with rooms
+    private void setUniqueBookingID(Request req, Reducer reducer)
+    {
+        req.setId(getUniqueNumber());
+        reducer.setCurrentID(req.getId());
     }
 
     // Hash function 
@@ -96,13 +105,25 @@ public class Master
         return gson.fromJson(json, RoomResult.class);
     }
 
-    // Serialize reducer object to json 
+    // Serializes reducer object to json 
     private String serializeReducer(Reducer reducer)
     {
         Gson gson = new GsonBuilder()
             .registerTypeAdapter(LocalDate.class, new LocalDateSerializer())
             .create();
         return gson.toJson(reducer);
+    }
+
+    // Deserializes json file to an integer (manager ID)
+    private int deserializeManagerID(String json)
+    {
+        return new Gson().fromJson(json, Integer.class);
+    }
+
+    // Serializes request object to json 
+    private String serializeRequest(Request request)
+    {
+        return new Gson().toJson(request);
     }
 
     // Opens master's server side
@@ -125,6 +146,9 @@ public class Master
         } else if(requestLine.startsWith("POST /bookRoom")) {
             System.out.println("Received book room request...");
             handleBookRoomRequest(input, output);
+        } else if(requestLine.startsWith("GET /getBooking")) {
+            //System.out.println("Received get booking request...");
+            handleGetBookRequest(input, output);
         } else {
             sendNotImplementedResponse(output);
         }
@@ -193,7 +217,7 @@ public class Master
         Reducer reducer = new Reducer();                                            // create reducer object
         String jsonFilter = extractBody(in);                                        // extract json from request body
         Filter filter = deserializeFilter(jsonFilter);                              // create filter object from json 
-        setRequestID(request, filter, reducer);                                     // set a unique id to filter and reducer object
+        setRequestIDFilter(filter, reducer);                                     // set a unique id to filter and reducer object
         jsonFilter = serializeFilter(filter);                                       // convert filter object back to json
         System.out.println("Received request: " + filter.getId() + 
                             " with " + filter.toString() + " is Thread: " + Thread.currentThread().threadId());
@@ -276,7 +300,8 @@ public class Master
     }
 
     // Handles requests for booking room
-    private void handleBookRoomRequest(BufferedReader in, OutputStream out) throws IOException, InterruptedException {
+    private void handleBookRoomRequest(BufferedReader in, OutputStream out) throws IOException, InterruptedException 
+    {
         String jsonRoomName = extractBody(in);                                            // extract json with room name from request body
         String roomName = new Gson().fromJson(jsonRoomName, String.class);       // create string with room name from json
         int workerID = hashFunc(roomName, workerConfig.nofWorkers);                     // hash room name and get worker id to send request  
@@ -322,6 +347,76 @@ public class Master
         book.join();
     }
 
+    private void handleGetBookRequest(BufferedReader in, OutputStream out) throws IOException, InterruptedException 
+    {
+        Reducer reducer = new Reducer();                                            // create reducer object
+        String jsonMangerID = extractBody(in);                                      // extract json with managerID from request body
+        int managerID = deserializeManagerID(jsonMangerID);                         // get manager ID from json 
+        Request request = new Request();                                         // create request object
+        request.setManagerID(managerID);                                         // set manager ID field of request object
+        setUniqueBookingID(request, reducer);                                    // set unique ID to request and reducer object 
+        //System.out.println(reducer.getCurrentID());
+        String jsonRequest = serializeRequest(request);                          // create json from request object
+        //System.out.println(jsonRequest);
+        System.out.println("Received request: " + request.getId() + 
+                            " with " + request.toString() + " is Thread: " + Thread.currentThread().threadId());
+        for(Worker worker : workerConfig.workers) {                                 // for each worker configured
+            Thread work = new Thread(() -> { 
+                Socket socket = null;
+                try {
+                    socket = new Socket(hostname, worker.port);                     // open socket to worker's port
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }                                 
+                PrintWriter outputWorker = null;                                    // set output to worker
+                try {
+                    outputWorker = new PrintWriter(socket.getOutputStream(), true);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }                                             
+                BufferedReader inputWorker = null;                                  // buffer for inputs from worker
+                try {
+                    inputWorker = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                sendGetBookRequest(outputWorker, jsonRequest);                      // send request to get bookings
+                // Read the response
+                String responseBody = null;                                         // body of http response 
+                try {
+                    responseBody = extractBody(inputWorker);                        // extract json with results 
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                RoomResult results =  deserializeResults(responseBody);     // deserialize json with searching results
+                try {
+                    reducer.reduce(results.getId(), results);               // reduce results with same id
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                try {
+                    consumeRemainingRequest(inputWorker);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                try {
+                    socket.close();                                         // close socket
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }                                                                                
+            });
+            work.start();                                                   // start thread
+            work.join();                                                    // call external thread to wait for inside thread to finish
+        }
+        try {
+            // Send response for succesfull http request
+            sendHttpResponse(out, 200, "OK", 
+            serializeReducer(reducer) , "application/json");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }                                                
+    }
+
     // Sends http request for searching a room to worker
     private static void sendSearchRoomRequest(PrintWriter out, String jsonBody) {
         out.println("POST /searchRoom HTTP/1.1");
@@ -355,6 +450,16 @@ public class Master
         out.println(jsonBody);
     }
 
+    // Sends request to get manager's bookings
+    private void sendGetBookRequest(PrintWriter out, String jsonBody) {
+        out.println("GET /getBooking HTTP/1.1");
+        out.println("Host: localhost");
+        out.println("Content-Type: application/json");
+        out.println("Content-Length: " + jsonBody.length());
+        out.println("Connection: close");
+        out.println();
+        out.println(jsonBody);
+    }
     // Sends error message when the server is incapable of performing the request
     private static void sendNotImplementedResponse(OutputStream out) throws IOException {
         sendHttpResponse(out, 501, "Not Implemented", "", "text/plain");

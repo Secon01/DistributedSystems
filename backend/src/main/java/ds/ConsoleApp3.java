@@ -22,8 +22,13 @@ public class ConsoleApp3 extends Thread {
     private Scanner inp;
     private String end;
     private String start;
-    static String finalJSOString;
+    private String finalJSOString;
+    private int managerID;                              // manager's personal ID instance
     private String regex = "\\d{4}-\\d{2}-\\d{2}";      // regular expression to match the format YYYY-MM-DD
+    private static String hostname = "localhost";
+    private static int port = 8000;
+    private static String input;
+ 
 
     ConsoleApp3(Room room) throws IOException
     {
@@ -32,12 +37,16 @@ public class ConsoleApp3 extends Thread {
             .create();
         finalJSOString= gson.toJson(room);
         System.out.println(finalJSOString);
-        sendrequest();
     }
 
     ConsoleApp3()
     {
+        runMenu();
+    }
 
+    ConsoleApp3(int managerID)
+    {
+        this.managerID = managerID;
     }
 
     public void welcome() {
@@ -70,7 +79,7 @@ public class ConsoleApp3 extends Thread {
     public int getInput() {
         inp = new Scanner(System.in); // initialize scanner
         int choice = -1;
-        while (choice < 0 || choice > 3) { // user input number out of bounds
+        while (choice < 0 || choice > 4) { // user input number out of bounds
             try {
                 System.out.println("Enter your selection: ");
                 choice = Integer.parseInt(inp.nextLine()); // user input
@@ -120,17 +129,6 @@ public class ConsoleApp3 extends Thread {
                         }
                         finalJSOString = jsonObject.toString();
                         System.out.println("Final JSON File Content:\n" + finalJSOString);
-
-                        // gson convert the JSON string into an object
-                        // Gson gson = new Gson();
-                        // Room r = gson.fromJson(jsonString, Room.class);
-                        // r.setEndDate(end);
-                        // r.setStartDate(start);
-                        // System.out.println("Object created from JSON: " + r);
-                        // System.out.println(r.getArea());
-                        // System.out.println(r.getEndDate());
-                        // System.out.println(r.getStartDate());
-
                     } else {
                         System.out.println("Failed to read the JSON file.");
                     }
@@ -144,12 +142,18 @@ public class ConsoleApp3 extends Thread {
                 System.out.println("These are your apartments' information:\n" + finalJSOString);
                 break;
             case 3:
-                // sendDataToServer(finalJSOString);
-                try {
-                    sendrequest();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                inp = new Scanner(System.in);
+                System.out.println("Type 'add room' and press enter to proceed");
+                input = inp.nextLine();
+                this.run();                 // call run of current thread
+                break;
+            case 4:
+                inp = new Scanner(System.in);
+                System.out.println("Type your peronal ID and press enter to proceed");
+                managerID = Integer.parseInt(inp.nextLine());
+                System.out.println("Type 'get booking' and press enter to proceed");
+                input = inp.nextLine();
+                this.run();                 // call run of current thread
                 break;
             default:
                 System.out.println("An unknown error has occured!");
@@ -164,32 +168,54 @@ public class ConsoleApp3 extends Thread {
         }
     }
 
-    // public Room readJsonFile(String filePath) throws FileNotFoundException {
-    // Gson gson = new Gson();
-    // try (FileReader reader = new FileReader(filePath)) {
-    // return gson.fromJson(reader, Room.class);
-    // } catch (Exception e) {
-    // throw new FileNotFoundException("Failed to read JSON file: " +
-    // e.getMessage());
-    // }
-    // }
-
-    // private void sendDataToServer(String data) {
-    // try (Socket socket = new Socket("localhost", Server.PORT);
-    // PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {
-    // out.println(data);
-    // System.out.println("Data sent to server: " + data);
-    // } catch (IOException e) {
-    // e.printStackTrace();
-    // }
-    // }
+    public void run() 
+    {
+        Socket socket = null;
+        try {
+            socket = new Socket(hostname, port);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try (PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+            if (input.equals("add room")) {
+                sendPostNewRoomRequest(out, finalJSOString);
+                // Read the response
+                String responseLine;
+                while ((responseLine = in.readLine()) != null) {
+                    System.out.println(responseLine);
+                }
+            }  else if(input.equals("get booking")) {
+                sendGetBookRequest(out);
+                // Read the response
+                String responseLine;
+                while ((responseLine = in.readLine()) != null) {
+                    System.out.println(responseLine); 
+                }   
+            } 
+            else {
+                System.out.println("Unknown command. Use 'getRoom' or 'newRoom'.");
+                inp.close();                 // close scanner
+                return;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                socket.close();             // close socket
+            } catch (IOException e) {
+                    e.printStackTrace();
+            }
+        }         
+    } 
+    /* 
     public void sendrequest() throws IOException {
         String hostname = "localhost";
         int port = 8000;
         Socket socket = new Socket(hostname, port);
         try (PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-                BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
-            sendPostNewRoomRequest(in, out);
+            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+            sendPostNewRoomRequest(out);
 
             // Read the response
             String responseLine;
@@ -202,9 +228,9 @@ public class ConsoleApp3 extends Thread {
             socket.close();
         }
     }
-
-    private static void sendPostNewRoomRequest(BufferedReader in, PrintWriter out) {
-        String jsonBody =  finalJSOString;
+    */
+    // Send request to add new room 
+    private void sendPostNewRoomRequest(PrintWriter out, String jsonBody) {
         out.println("POST /newRoom HTTP/1.1");
         out.println("Host: localhost");
         out.println("Content-Type: application/json");
@@ -214,45 +240,59 @@ public class ConsoleApp3 extends Thread {
         out.println(jsonBody);
     }
 
+    // Serialize manager's personal ID
+    private String serializeMangerID(int mID)
+    {
+        return new Gson().toJson(mID);
+    }
+
+    // Sends request to get manager's bookings
+    private void sendGetBookRequest(PrintWriter out) {
+        String jsonBody = serializeMangerID(managerID);
+        out.println("GET /getBooking HTTP/1.1");
+        out.println("Host: localhost");
+        out.println("Content-Type: application/json");
+        out.println("Content-Length: " + jsonBody.length());
+        out.println("Connection: close");
+        out.println();
+        out.println(jsonBody);
+    }
+  
+
     public static void main(String[] args) throws IOException {
-        //ConsoleApp3 insertion = new ConsoleApp3();
-        //insertion.runMenu();
+        //new ConsoleApp3().start();
         /* 
         Room room1 = new Room("Villa", null, 0, 40.0, 0, "Larisa", 0, null, null, null, true);
         Room room2 = new Room("HotelPoseidon", null, 0, 0, 0, "Athens", 0, null, null, null, true);
         Room room3 = new Room("StefFarm", null, 0, 0, 0, "Lamia", 0, null, null, null, true);
         */ 
-        Room room1 = new Room("Luxury Suite", 2, 200.0, 5,
-                                "Downtown", 100, "luxury_suite.jpg", "2024-04-01", "2024-04-07", true);
-        Room room2 = new Room("Cozy Cabin", 4, 150.0, 4,
-                                "Mountains", 80, "cozy_cabin.jpg", "2024-04-02", "2024-04-08", true);
-        Room room3 = new Room("Beach House", 6, 300.0, 5,
-                                "Beachfront", 120, "beach_house.jpg", "2024-04-03", "2024-04-09", true);
-        Room room4 = new Room("City Apartment", 3, 180.0, 4,
-                                "Urban", 90, "city_apartment.jpg", "2024-04-04", "2024-04-10", true);
-        Room room5 = new Room("Country Cottage", 4, 160.0, 4,
-                                "Rural", 85, "country_cottage.jpg", "2024-04-05", "2024-04-11", true);
-        Room room6 = new Room("Mountain Chalet", 5, 250.0, 5,
-                                "Mountains", 110, "mountain_chalet.jpg", "2024-04-06", "2024-04-12", true);
-                                          
-        new ConsoleApp3(room1).start();
-        new ConsoleApp3(room2).start();
-        new ConsoleApp3(room3).start();       
-        new ConsoleApp3(room4).start();       
-        new ConsoleApp3(room5).start();       
-        new ConsoleApp3(room6).start();      
-        /* 
-        Gson gson = new GsonBuilder()
-            .registerTypeAdapter(LocalDate.class, new LocalDateSerializer())
-            .create();
-        String json = gson.toJson(room1);
-        System.out.println(json);
-    
-        Gson gson2 = new GsonBuilder()
-            .registerTypeAdapter(LocalDate.class, new LocalDateDeserializer())
-            .create();
-        Room room = gson2.fromJson(json, Room.class);
-        System.out.println(room.toString());
-        */
+        Scanner sc = new Scanner(System.in);
+        System.out.println("Give input");
+        String in = sc.nextLine();
+        if(in.equals("add room")) {
+            Room room1 = new Room(12,"Luxury Suite", 2, 200.0, 5,
+            "Downtown", 100, "luxury_suite.jpg", "2024-04-01", "2024-04-07", true);
+            Room room2 = new Room(12,"Cozy Cabin", 4, 150.0, 4,
+                        "Mountains", 80, "cozy_cabin.jpg", "2024-04-02", "2024-04-08", true);
+            Room room3 = new Room(12,"Beach House", 6, 300.0, 5,
+                        "Beachfront", 120, "beach_house.jpg", "2024-04-03", "2024-04-09", true);
+            Room room4 = new Room(34,"City Apartment", 3, 180.0, 4,
+                        "Urban", 90, "city_apartment.jpg", "2024-04-04", "2024-04-10", true);
+            Room room5 = new Room(34,"Country Cottage", 4, 160.0, 4,
+                        "Rural", 85, "country_cottage.jpg", "2024-04-05", "2024-04-11", true);
+            Room room6 = new Room(34, "Mountain Chalet", 5, 250.0, 5,
+                        "Mountains", 110, "mountain_chalet.jpg", "2024-04-06", "2024-04-12", true);
+            input = in;
+            new ConsoleApp3(room1).start();
+            new ConsoleApp3(room2).start();
+            new ConsoleApp3(room3).start();       
+            new ConsoleApp3(room4).start();       
+            new ConsoleApp3(room5).start();       
+            new ConsoleApp3(room6).start();                                 
+        } else if(in.equals("get booking")) {
+            input = in;
+            new ConsoleApp3(12).start();
+        }
+        sc.close();
     }
 }

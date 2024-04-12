@@ -1,4 +1,5 @@
 {
+"managerID" : 7,
 "roomName" : "HotelPoseidon",
 "date": "2024-03-24",
 "guests":3,
@@ -7,5 +8,5 @@
 "area": "Larisa",
 "reviews": 0,
 "roomImage":"/home/secon/Downloads/Villa-Lamia-Lesbos-Olivers-Travels-1.png",
-"availiable":true 
+"available":true 
 }

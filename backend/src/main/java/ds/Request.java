@@ -2,19 +2,23 @@ package ds;
 public class Request 
 {
     private int id;                 // id of request
-    private static int requestID = 0;               // id for request
+    private int managerID;          // instance for manager ID
 
-    public void setId(int id) {     // set request's id
+    // Setters, getters
+    public void setId(int id) {     
         this.id = id;
     }
 
-    public int getId() {            // get request's id
+    public void setManagerID(int managerID) {
+        this.managerID = managerID;
+    }
+
+    public int getId() 
+    {            
         return id;
     }
 
-    // Give unique number in order in the next request
-    public int generateUniqueNumber() {
-        return requestID++;               
+    public int getManagerID() {
+        return managerID;
     }
-
 }

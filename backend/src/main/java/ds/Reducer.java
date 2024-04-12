@@ -25,14 +25,12 @@ public class Reducer implements Comparable<Reducer>
 
     public synchronized void reduce(int id, RoomResult resRooms) throws InterruptedException
     {
-        //synchronized(this) {
-            if(id == this.currentID) {
-                this.results.add(resRooms);
-                notify();
-            } else {
-                wait();
-            }    
-       // }
+        if(id == this.currentID) {
+            this.results.add(resRooms);
+            notify();
+        } else {
+            wait();
+        }    
     }
 
     // Prints request id and rooms of results arraylist
@@ -43,6 +41,7 @@ public class Reducer implements Comparable<Reducer>
         System.out.println("+-------------- Request: " +  this.currentID + " --------------+");
         for(RoomResult result : results) {
             result.printRooms();        // prints each room's data
+            System.out.println();
         }
     }
 
