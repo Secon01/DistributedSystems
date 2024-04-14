@@ -12,7 +12,7 @@
  }
 
  private void sendReviewRequest(PrintWriter out) {
-      String jsonBody = new Gson().toJson(filter);
+      String jsonBody = new Gson().toJson(review);
       out.println("POST /giveReview HTTP/1.1");
       out.println("Host: localhost");
       out.println("Content-Type: application/json");
@@ -38,64 +38,66 @@
 
 
  private void handleNewReviewRequest(BufferedReader in, OutputStream out) throws IOException, InterruptedException {
-     String jsonReview = extractBody(in);                                        // extract json from request body
-     Review review = new Gson().fromJson(jsonReview, Review.class);                              // create filter object from json 
-     //setRequestID(request, review);                                              // set a unique id to filter object                                      // convert filter object back to json
-     System.out.println("Received request: " + review.getId() + " with " + review.toString() + " is Thread: " ); //Thread.currentThread().threadId());
-     final String json = jsonReview;     // make it final to work
-     // Client side of master
-         int workerID = hashFunc(review.getRoomForReview(), workerConfig.nofWorkers);           // hash room name and get worker id to send request  
-         int workerPort = getPort(workerID);                                         // for each worker configured
-         new Thread(() -> {
-             Socket socket = null;
-             try {
-                 socket = new Socket(hostname, workerPort);
-             } catch (IOException e) {
-                 e.printStackTrace();
-             }                                 // open socket to worker's port
-             PrintWriter output = null;
-             try {
-                 output = new PrintWriter(socket.getOutputStream(), true);
-             } catch (IOException e) {
-                 e.printStackTrace();
-             }                         // set output
-             BufferedReader inputWorker = null;
-             try {
-                 inputWorker = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-             } catch (IOException e) {
-                 e.printStackTrace();
-             }        // buffer for inputs from worker            
-             sendGiveReviewRequest(output,json);                                                              // send request
-             // Read the response
-             StringBuilder responseBody = new StringBuilder();
-             String responseLine;
-             try {
-                 int contentLength = 0;
-                 // Extract content length                    
-                 while (!(responseLine = inputWorker.readLine()).isEmpty()) {                           // read response from input
-                     if (responseLine.toLowerCase().startsWith("content-length:")) {
-                         contentLength = Integer.parseInt(responseLine.substring("content-length:".length()).trim());
-                     }                
-                     //System.out.println(responseLine);                    
-                 }
-                 // Read the body
-                 if (contentLength > 0) {
-                     char[] buffer = new char[contentLength];
-                     inputWorker.read(buffer, 0, contentLength);
-                     responseBody.append(new String(buffer));
-                     //System.out.println(buffer);
-                 }
-                 System.out.println(responseBody.toString());    
-             } catch (IOException e) {
-                 e.printStackTrace();
-             }
-             //consumeRemainingRequest(inputWorker);
-             try {
-                 socket.close();
-             } catch (IOException e) {
-                 e.printStackTrace();
-             }                                                                             // close socket               
-         }).start();
+        String jsonReview = extractBody(in);                                        // extract json from request body
+        Review review = new Gson().fromJson(jsonReview, Review.class);                              // create filter object from json 
+        //setRequestID(request, review);                                              // set a unique id to filter object                                      // convert filter object back to json
+        System.out.println("Received request: " + review.getId() + " with " + review.toString() + " is Thread: " ); //Thread.currentThread().threadId());
+        final String json = jsonReview;     // make it final to work
+        // Client side of master
+            int workerID = hashFunc(review.getRoomForReview(), workerConfig.nofWorkers);           // hash room name and get worker id to send request  
+            int workerPort = getPort(workerID);                                         // for each worker configured
+            Thread rev = new Thread(() -> {
+                Socket socket = null;
+                try {
+                    socket = new Socket(hostname, workerPort);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }                                 // open socket to worker's port
+                PrintWriter output = null;
+                try {
+                    output = new PrintWriter(socket.getOutputStream(), true);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }                         // set output
+                BufferedReader inputWorker = null;
+                try {
+                    inputWorker = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }        // buffer for inputs from worker            
+                sendGiveReviewRequest(output,json);                                                              // send request
+                // Read the response
+                StringBuilder responseBody = new StringBuilder();
+                String responseLine;
+                try {
+                    int contentLength = 0;
+                    // Extract content length                    
+                    while (!(responseLine = inputWorker.readLine()).isEmpty()) {                           // read response from input
+                        if (responseLine.toLowerCase().startsWith("content-length:")) {
+                            contentLength = Integer.parseInt(responseLine.substring("content-length:".length()).trim());
+                        }                
+                        //System.out.println(responseLine);                    
+                    }
+                    // Read the body
+                    if (contentLength > 0) {
+                        char[] buffer = new char[contentLength];
+                        inputWorker.read(buffer, 0, contentLength);
+                        responseBody.append(new String(buffer));
+                        //System.out.println(buffer);
+                    }
+                    System.out.println(responseBody.toString());    
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                //consumeRemainingRequest(inputWorker);
+                try {
+                    socket.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }                                                                             // close socket               
+            });
+            rev.start();
+            rev.join();
 
 //---------------------------------------------------------------------
 //-----------------------TO WORKER-------------------------------------
@@ -135,20 +137,22 @@ private void handleNewReviewRequest(BufferedReader in, OutputStream out) throws 
      return review;
  }
 
- private void giveReview(String roomForReview ,Double review){
-     for(Room room : rooms) {
-         if(room.getRoomName() == roomForReview){     
-             int numberof = room.getReviews();
-             numberof ++ ;
-             room.setReviews(numberof);
-             double starof = room.getStars();
-             double sum = starof * (numberof -1 )  ;
-             starof = sum + star;
-             room.setStars((sum + review)/numberoff);
-         System.out.println(room.getReviews() + room.getStars());
-         }
-     }
- }
+ private void giveReview(String roomForReview ,int review)
+    {
+        int star = 0;
+        int numberoff=0;
+        for(Room room : rooms) {
+            if(room.getRoomName() == roomForReview){     
+                int numberof = room.getReviews();
+                numberof ++ ;
+                room.setReviews(numberof);
+                int starof = room.getStars();
+                int sum = starof * (numberof -1 )  ;
+                starof = sum + star;
+                room.setStars((sum + review)/numberoff);
+            System.out.println(room.getReviews() + room.getStars());
+            }
+        }
+    }
 
-
- //----------------------------book()-------------------------------
+ß
