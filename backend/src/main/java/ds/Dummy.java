@@ -57,13 +57,14 @@ public class Dummy extends Thread {
 
    public void menu() {
       System.out.println();
-      System.out.println("Please select a number for filtering or press 6 to continue for booking. If you want to exit press 0.");
+      System.out.println("Please select a number and press enter to proceed. If you want to exit press 0 and enter to proceed.");
       System.out.println(" 1) Area");
       System.out.println(" 2) Date Range");
       System.out.println(" 3) Number of guests");
       System.out.println(" 4) Price");
       System.out.println(" 5) Number of stars");
-      System.out.println(" 6) Continue");
+      System.out.println(" 6) Search");
+      System.out.println(" 7) Book");
       System.out.println(" 0) Exit");
    }
 
@@ -80,7 +81,7 @@ public class Dummy extends Thread {
       this.sc = new Scanner(System.in);
       int choice = -1;
 
-      while(choice < 0 || choice > 6) {
+      while(choice < 0 || choice > 7) {
          try {
             System.out.println("Enter your selection: ");
             choice = Integer.parseInt(this.sc.nextLine());
@@ -140,11 +141,13 @@ public class Dummy extends Thread {
          case 6:
             input = "search";
             search();
+            break;
+         case 7:
             Scanner rn = new Scanner(System.in);
             System.out.println("Type the name of the room you wish to book");
             Dummy.roomName = rn.nextLine();
             input = "book";
-            book();
+            book();         
             break;
          default:
             System.out.println("An unknown error has occured!");
@@ -197,21 +200,25 @@ public class Dummy extends Thread {
       }
       try (PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
          BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
-      if (input.equals("search")) {
-         sendSearchRoomRequest(out);
-         String json = extractBody(in);
-         if(json == null) {
-            System.out.println("Room not found");
+      if (input.equals("search")) {          // check if input is equal to 'search' 
+         reducers = new ArrayList<>();                // initialize arraylist with reduce objects
+         sendSearchRoomRequest(out);                  // send request for searching a room
+         String json = extractBody(in);               // extract json from http request body
+         if(json == null) {                           // if json string is null 
+            System.out.println("Room not found");     
             return;
          }
-         Reducer reducer = deserializeReducer(json);
-         //System.out.println(reducer.getResults() + " " + reducer.getCurrentID());
-         //reducer.printRooms();
+         Reducer reducer = deserializeReducer(json);  // create reducer object from json  
          synchronized(reducer) {
-            reducers.add(reducer);
+            reducers.add(reducer);                    // add reducer objects with results in reducers array
          }   
-      }  else if(input.equals("book")) {
-         sendBookRoomRequest(out);
+         Thread.sleep(1000);
+         Collections.sort(reducers);                  // sort reducers array list based on current id
+         for(Reducer r : reducers) {                  // for each reducer obejct in reducers arraylist
+            r.printRooms();                           // print results
+         }   
+      }  else if(input.equals("book")) {     // check if input is equal to 'search'
+         sendBookRoomRequest(out);                    // send request for booking a room
          // Read the response
          String responseLine;
          while ((responseLine = in.readLine()) != null) {
@@ -220,18 +227,12 @@ public class Dummy extends Thread {
       } 
       else {
          System.out.println("Unknown command. Use 'getRoom' or 'newRoom'.");
-         sc.close();                 // close scanner
+         sc.close();                                  // close scanner
          return;
       }
-      //reducer.printRooms();
-      // Read the response
-      //synchronized(in) {
-      //   String responseLine;
-      //   while ((responseLine = in.readLine()) != null) {
-      //         System.out.println(responseLine); 
-      //   }
-      //}    
       } catch (IOException e) {
+         e.printStackTrace();
+      } catch (InterruptedException e) {
          e.printStackTrace();
       } finally {
          try {

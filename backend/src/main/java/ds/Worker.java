@@ -358,7 +358,7 @@ public class Worker
         }
         //System.out.println("Room added...");
     }
-
+    // Handles requests for getting bookings
     private void handleGetBookRequest(BufferedReader in, OutputStream out) throws IOException, InterruptedException 
     {
         String jsonRequest = extractBody(in);                                           // extract json with managerID from http request body
@@ -368,13 +368,13 @@ public class Worker
         int managerID = request.getManagerID();                                         // get manager ID from request object
         System.out.println(managerID);
         RoomResult bookings = resultBookings(isBooked(managerID), request);             // get array with bookings(booked rooms) for manager
-        //bookings.printRooms();
+        //System.out.println(bookings);
         String jsonResults = serializeResults(bookings);                                // serialize results with bookings to json
         System.out.println("->->->" + jsonResults);
-        if (jsonResults != null) {                                         // if json with results is not null
+        if (bookings != null) {                                         // if json with results is not null
             sendHttpResponse(out, 200, "OK", jsonResults
             , "application/json");                                                              // send response for successful http request                        
-        } else if(jsonResults == null) {
+        } else {
             sendHttpResponse(out, 404, "Not Found", jsonResults
             , "application/json");
             System.out.println("DEBUG");                                                                  // send response for unsuccessful http request

@@ -194,7 +194,7 @@ public class Room extends Request
                "Available: " + this.available + "\n" +
                "Start date: " + this.startDate + "\n" +
                "End date: " + this.endDate + "\n" +
-               "Id: " + this.getId(); 
+               "Manager Id: " + this.getManagerID(); 
     }
 
     public static void main(String[] args) {

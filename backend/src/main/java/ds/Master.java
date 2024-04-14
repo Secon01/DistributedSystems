@@ -215,7 +215,7 @@ public class Master
     // Handles requests for searching room
     private void handleSearchRoomRequest(BufferedReader in, OutputStream out) throws IOException, InterruptedException {
         Reducer reducer = new Reducer();                                            // create reducer object
-        String jsonFilter = extractBody(in);                                        // extract json from request body
+        String jsonFilter = extractBody(in);                                        // extract json from http request body
         Filter filter = deserializeFilter(jsonFilter);                              // create filter object from json 
         setRequestIDFilter(filter, reducer);                                     // set a unique id to filter and reducer object
         jsonFilter = serializeFilter(filter);                                       // convert filter object back to json
@@ -248,20 +248,17 @@ public class Master
                 String responseBody = null;                                
                 try {
                     responseBody = extractBody(inputWorker);                // extract json with results 
-                    if(responseBody == null) {
-                        sendHttpResponse(out, 404, "Not Found", "{\"message\":\"Room not found\"}"
-                        , "application/json");                  // send response for unsuccessful http request
-                        return;
-                    }
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
                 RoomResult results =  deserializeResults(responseBody);     // deserialize json with searching results
                 try {
-                    reducer.reduce(results.getId(), results);               // reduce results with same id
+                    if(results != null) {
+                        reducer.reduce(results.getId(), results);               // reduce results with same id
+                    }
                 } catch (InterruptedException e) {
                     e.printStackTrace();
-                }
+                } 
                 try {
                     consumeRemainingRequest(inputWorker);
                 } catch (IOException e) {
@@ -272,31 +269,28 @@ public class Master
                 } catch (IOException e) {
                     e.printStackTrace();
                 }                                                                                
-                synchronized(reducer) {
-                    reducer.notify();
-                }           
             });
             work.start();
             work.join();
-                /* 
-                if(response.toString().startsWith("HTTP/1.1 404 Not Found")) {                      // if response is 404 not found
-                    try {
-                        sendHttpResponse(out, 404, "Not Found", "{\"message\":\"Room not found\"}"
-                        , "application/json");
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }                                                     // send response for unsuccesfull http request         
-                } else {
-                */
-                //}
         }
-        try {
-            // Send response for succesfull http request
-            sendHttpResponse(out, 200, "OK", 
-            serializeReducer(reducer) , "application/json");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }                                                 
+        if(reducer.getResults().isEmpty()) {
+            try {
+                // Send response for succesfull http request
+                sendHttpResponse(out, 404, "Not Found", "{\"message\":\"Bookings not found\"}"
+                , "application/json");                  // send response for unsuccessful http request
+                return;
+            } catch (IOException e) {
+                e.printStackTrace();
+            }                                                    
+        } else {
+            try {
+                // Send response for succesfull http request
+                sendHttpResponse(out, 200, "OK", 
+                serializeReducer(reducer) , "application/json");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }                                                    
+        }
     }
 
     // Handles requests for booking room
@@ -385,12 +379,15 @@ public class Master
                 String responseBody = null;                                         // body of http response 
                 try {
                     responseBody = extractBody(inputWorker);                        // extract json with results 
+                    //System.out.println(responseBody);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
                 RoomResult results =  deserializeResults(responseBody);     // deserialize json with searching results
                 try {
-                    reducer.reduce(results.getId(), results);               // reduce results with same id
+                    if(results != null) {
+                        reducer.reduce(results.getId(), results);               // reduce results with same id
+                    }
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -408,13 +405,24 @@ public class Master
             work.start();                                                   // start thread
             work.join();                                                    // call external thread to wait for inside thread to finish
         }
-        try {
-            // Send response for succesfull http request
-            sendHttpResponse(out, 200, "OK", 
-            serializeReducer(reducer) , "application/json");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }                                                
+        if(reducer.getResults().isEmpty()) {
+            try {
+                // Send response for succesfull http request
+                sendHttpResponse(out, 404, "Not Found", "{\"message\":\"Bookings not found\"}"
+                , "application/json");                  // send response for unsuccessful http request
+                return;
+            } catch (IOException e) {
+                e.printStackTrace();
+            }                                                    
+        } else {
+            try {
+                // Send response for succesfull http request
+                sendHttpResponse(out, 200, "OK", 
+                serializeReducer(reducer) , "application/json");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }                                                    
+        }
     }
 
     // Sends http request for searching a room to worker
@@ -486,7 +494,7 @@ public class Master
     // Extract content length
     int contentLength = 0;
         while (!(line = in.readLine()).isEmpty()) {
-            //System.out.println(line);                   // print http response
+            System.out.println(line);                   // print http response
             if (line.toLowerCase().startsWith("content-length:")) {
                 contentLength = Integer.parseInt(line.substring("content-length:".length()).trim());
             }

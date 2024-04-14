@@ -5,6 +5,8 @@ package ds;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Scanner;
 import java.util.regex.Pattern;
 import org.json.JSONObject;
@@ -28,6 +30,7 @@ public class ConsoleApp3 extends Thread {
     private static String hostname = "localhost";
     private static int port = 8000;
     private static String input;
+    private static ArrayList<Reducer> reducers;        // array list with reducer objects for printing
  
 
     ConsoleApp3(Room room) throws IOException
@@ -168,6 +171,16 @@ public class ConsoleApp3 extends Thread {
         }
     }
 
+    // Deserialize json to reducer object  
+    private Reducer deserializeReducer(String json)
+    {
+        Gson gson = new GsonBuilder()
+            .registerTypeAdapter(LocalDate.class, new LocalDateDeserializer())
+            .create();
+        return gson.fromJson(json, Reducer.class);
+    }
+    
+
     public void run() 
     {
         Socket socket = null;
@@ -185,13 +198,27 @@ public class ConsoleApp3 extends Thread {
                 while ((responseLine = in.readLine()) != null) {
                     System.out.println(responseLine);
                 }
-            }  else if(input.equals("get booking")) {
-                sendGetBookRequest(out);
-                // Read the response
-                String responseLine;
-                while ((responseLine = in.readLine()) != null) {
-                    System.out.println(responseLine); 
-                }   
+            } else if(input.equals("get booking")) {
+                reducers = new ArrayList<>();                   // initialize arraylist with reduce objects
+                sendGetBookRequest(out);                        // send request in order to get the bookings
+                String json = extractBody(in);                  // extract json from http request body 
+                System.out.println(json);
+                if (!json.isEmpty()) {
+                    Reducer reducer = deserializeReducer(json);     // create reducer object from json
+                    synchronized(reducer) {
+                       reducers.add(reducer);                       // add reducer objects with results in reducers array
+                    }
+                    Thread.sleep(1000);
+                    Collections.sort(reducers);                     // sort reducers array list based on current id
+                    for(Reducer r : reducers) {                   // for each reducer obejct in reducers arraylist
+                        r.printRooms();                           // print results
+                    }    
+                } else {
+                    String responseLine;
+                    while ((responseLine = in.readLine()) != null) {
+                        System.out.println(responseLine);
+                    }    
+                }
             } 
             else {
                 System.out.println("Unknown command. Use 'getRoom' or 'newRoom'.");
@@ -200,7 +227,10 @@ public class ConsoleApp3 extends Thread {
             }
         } catch (IOException e) {
             e.printStackTrace();
-        } finally {
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } 
+        finally {
             try {
                 socket.close();             // close socket
             } catch (IOException e) {
@@ -229,6 +259,33 @@ public class ConsoleApp3 extends Thread {
         }
     }
     */
+    // Extracts body from http search room request
+    private static String extractBody(BufferedReader in) throws IOException 
+    {
+        StringBuilder requestBody = new StringBuilder();    // build the body of request into string
+        String line;                                        // represents each line of http header
+        // Extract content length
+        int contentLength = 0;
+        while (!(line = in.readLine()).isEmpty()) {
+            System.out.println(line);
+            if (line.toLowerCase().startsWith("content-length:")) {
+            contentLength = Integer.parseInt(line.substring("content-length:".length()).trim());
+            }
+        }    
+        // Read the body
+        //if (contentLength == 32) {      // content length of error message
+        //    while ((line = in.readLine()) != null) {
+        //        System.out.println(line);
+        //    }
+        //} else 
+        if(contentLength > 0) {
+            char[] buffer = new char[contentLength];
+            in.read(buffer, 0, contentLength);
+            requestBody.append(new String(buffer));
+        }
+        return requestBody.toString();
+    }
+
     // Send request to add new room 
     private void sendPostNewRoomRequest(PrintWriter out, String jsonBody) {
         out.println("POST /newRoom HTTP/1.1");
