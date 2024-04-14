@@ -242,18 +242,34 @@ public class Worker
         return booked;                                                                  // return flag
     }
 
-    // Checks if a room is booked and returns indexes array with idexes of rooms found
+    // Checks if a room with a matching manager id is booked
+    // and returns indexes array with idexes of rooms found
     private ArrayList<Integer> isBooked(int managerID)
     {
         ArrayList<Integer> indexes = new ArrayList<>();                             // array to collect room indexes of rooms
         for(Room room : rooms) {                                                    // for each room in rooms array
-            if(managerID == room.getManagerID() && room.getAvailable() == false) {  // if the two IDs match and current room isn't available
+            if(managerID == room.getManagerID() && room.getAvailable() == false) {  // if the two IDs match and current room is booked
                 indexes.add(rooms.indexOf(room));                                   // add to indexes array the index of current room
             }
         }
         return indexes;     
     }
 
+    // Checks if a room with a date range within the given date range is booked 
+    // and returns indexes array with idexes of rooms found
+    private ArrayList<Integer> isBookedDateRange(DateRange dateRange)
+    {
+        ArrayList<Integer> indexes = new ArrayList<>();                             // array to collect room indexes of rooms
+        for(Room room: rooms) {                                                     // for each room in rooms array
+            if(room.getAvailable() == false                                         // if current room is booked and 
+                && dateRange.isWithinRange(room.getDateRange())) {                  // room's date range is within the given date range
+                indexes.add(rooms.indexOf(room));                                   // add to indexes array the index of current room
+                //System.out.println("yes");
+            }
+        }
+        return indexes;
+    }
+    // Returns an array of rooms according to given date range and passes the request's id to array
     private RoomResult resultBookings(ArrayList<Integer> indx, Request request) 
     {
         Room resultRoom;                                            // room result instance
@@ -306,12 +322,14 @@ public class Worker
         } else if(requestLine.startsWith("GET /getBooking")) {
             //System.out.println("Received get booking request...");
             handleGetBookRequest(input, output);
+        } else if(requestLine.startsWith("GET /getAreaBooking")) {
+            System.out.println("Received get area booking request...");
+            handleAreaBookRequest(input, output);
         } else {
             sendNotImplementedResponse(output);
         }
         consumeRemainingRequest(input);
         connection.close();                                                                                 // close socket    
-        //printRooms();
 	}
 
     // Handles requests for new room insertion
@@ -335,13 +353,13 @@ public class Worker
         RoomResult resultRooms = map(hasRoom(filter), filter);                                              // get array with results for reducer
         String jsonResults = serializeResults(resultRooms);                                                 // serialize results to json
         //System.out.println("->->->" + jsonResults);
-        if (jsonResults != null) {                                         // if json with results is not null
+        if (resultRooms != null) {                                         // if json with results is not null
             sendHttpResponse(out, 200, "OK", jsonResults
             , "application/json");                                                              // send response for successful http request                        
-        } else if(jsonResults == null) {
+        } else {
             sendHttpResponse(out, 404, "Not Found", jsonResults
             , "application/json");
-            System.out.println("DEBUG");                                                                  // send response for unsuccessful http request
+            //System.out.println("DEBUG");                                                                  // send response for unsuccessful http request
         }
     }
     // Handles requests for booking
@@ -361,23 +379,42 @@ public class Worker
     // Handles requests for getting bookings
     private void handleGetBookRequest(BufferedReader in, OutputStream out) throws IOException, InterruptedException 
     {
-        String jsonRequest = extractBody(in);                                           // extract json with managerID from http request body
-        Request request = deserializeRequest(jsonRequest);                              // create a request object with manager id from json
-        System.out.println("Received request: " + request.getId() + " with " 
-        + request.toString() + " is Thread: " + Thread.currentThread().threadId());
-        int managerID = request.getManagerID();                                         // get manager ID from request object
-        System.out.println(managerID);
+        String jsonRequest = extractBody(in);                                                   // extract json with managerID from http request body
+        Request request = deserializeRequest(jsonRequest);                                      // create a request object with manager id from json
+        System.out.println("Received request: " + request.getId() + " is Thread: " + Thread.currentThread().threadId()
+                            + " with: " + "\n" + "Manager ID: " + request.getManagerID());      // get manager ID from request object
+        int managerID = request.getManagerID();                                                 // get manager ID from request object
+        //System.out.println(managerID);
         RoomResult bookings = resultBookings(isBooked(managerID), request);             // get array with bookings(booked rooms) for manager
-        //System.out.println(bookings);
         String jsonResults = serializeResults(bookings);                                // serialize results with bookings to json
         System.out.println("->->->" + jsonResults);
-        if (bookings != null) {                                         // if json with results is not null
+        if (bookings != null) {                                                         // if json with results is not null
             sendHttpResponse(out, 200, "OK", jsonResults
-            , "application/json");                                                              // send response for successful http request                        
+            , "application/json");                                          // send response for successful http request                        
         } else {
             sendHttpResponse(out, 404, "Not Found", jsonResults
-            , "application/json");
-            System.out.println("DEBUG");                                                                  // send response for unsuccessful http request
+            , "application/json");                                          // send response for unsuccessful http request
+            //System.out.println("DEBUG");                                              
+        }
+    }
+    // Handles requests for getting bookings by area in given date range
+    private void handleAreaBookRequest(BufferedReader in, OutputStream out) throws IOException
+    {
+        String jsonRoom = extractBody(in);                                              // extract json of room object with given date range from http request body
+        Room room = deserializeRoom(jsonRoom);                                          // create a room object with given date range from json
+        System.out.println("Received request: " + room.getId() + " is Thread: " + Thread.currentThread().threadId() 
+                            + " with: " + " \n" + "Date range: " + room.getDateRange() );
+        RoomResult bookings = resultBookings(isBookedDateRange(room.getDateRange()), room);
+        //bookings.printRooms();
+        String jsonResults = serializeResults(bookings);                                // serialize results with bookings to json
+        System.out.println(jsonResults);
+        if (bookings != null) {                                                         // if json with results is not null
+            sendHttpResponse(out, 200, "OK", jsonResults
+            , "application/json");                                          // send response for successful http request                        
+        } else {
+            sendHttpResponse(out, 404, "Not Found", jsonResults
+            , "application/json");                                          // send response for unsuccessful http request
+            //System.out.println("DEBUG");                                              
         }
     }
 
@@ -423,20 +460,20 @@ public class Worker
         Scanner sc = new Scanner(System.in);
         System.out.println("Enter port");
         new Worker(sc.nextInt());
-        sc.close();
+        sc.close(); 
         /* 
         Room room1 = new Room(12,"Luxury Suite", 2, 200.0, 5,
-                                "Downtown", 100, "luxury_suite.jpg", "2024-04-01", "2024-04-07", true);
+                                "Downtown", 100, "luxury_suite.jpg", "2024-04-03", "2024-04-06", false);
         Room room2 = new Room(12,"Cozy Cabin", 4, 150.0, 4,
-                                "Mountains", 80, "cozy_cabin.jpg", "2024-04-02", "2024-04-08", true);
+                                "Mountains", 80, "cozy_cabin.jpg", "2024-04-02", "2024-04-05", false);
         
         Worker worker = new Worker();
         worker.addRoom(room1);
         worker.addRoom(room2);
-
-        RoomResult results = worker.resultBookings(worker.isBooked(12));
-        results.printRooms();
-        System.out.println(results.getRooms());
+        DateRange dr = new DateRange();
+        dr.setStartDate("2024-04-03");
+        dr.setEndDate("2024-04-06");
+        System.out.println(worker.isBookedDateRange(dr));
         */
     }
 }

@@ -44,13 +44,20 @@ public class Master
         return requestID++;               
     }
 
-    // Sets unique id to each request with filters
+    // Sets unique id to each request with filter and to reducer's id
     private void setRequestIDFilter(Filter filter, Reducer reducer)
     {
         //synchronized(req) {
             filter.setId(getUniqueNumber());
             reducer.setCurrentID(filter.getId());
         //}
+    }
+
+    // Sets unique id to each request with room and to reducer's id
+    private void setRequestIDRoom(Room room, Reducer reducer)
+    {
+        room.setId(getUniqueNumber());          
+        reducer.setCurrentID(room.getId());
     }
 
     // Sets unique id to each request with rooms
@@ -78,13 +85,21 @@ public class Master
         return gson.fromJson(json, Filter.class);
     }
 
-    // Deserializes json file to a room object
+    // Deserializes json to a room object
     private Room deserializeRoom(String json)
     {
         Gson gson = new GsonBuilder()
             .registerTypeAdapter(LocalDate.class, new LocalDateDeserializer())
             .create();
         return gson.fromJson(json, Room.class);
+    }    
+    // Serializes room object to json  
+    private String serializeRoom(Room room)
+    {
+        Gson gson = new GsonBuilder()
+            .registerTypeAdapter(LocalDate.class, new LocalDateSerializer())
+            .create();
+        return gson.toJson(room);
     }    
 
     // Serializes filter object to json 
@@ -149,6 +164,9 @@ public class Master
         } else if(requestLine.startsWith("GET /getBooking")) {
             //System.out.println("Received get booking request...");
             handleGetBookRequest(input, output);
+        } else if(requestLine.startsWith("GET /getAreaBooking")) {
+            System.out.println("Received get area booking request...");
+            handleAreaBookRequest(input, output);
         } else {
             sendNotImplementedResponse(output);
         }
@@ -340,20 +358,18 @@ public class Master
         book.start();
         book.join();
     }
-
+    // Handles requests for getting bookings
     private void handleGetBookRequest(BufferedReader in, OutputStream out) throws IOException, InterruptedException 
     {
         Reducer reducer = new Reducer();                                            // create reducer object
         String jsonMangerID = extractBody(in);                                      // extract json with managerID from request body
         int managerID = deserializeManagerID(jsonMangerID);                         // get manager ID from json 
-        Request request = new Request();                                         // create request object
-        request.setManagerID(managerID);                                         // set manager ID field of request object
-        setUniqueBookingID(request, reducer);                                    // set unique ID to request and reducer object 
-        //System.out.println(reducer.getCurrentID());
-        String jsonRequest = serializeRequest(request);                          // create json from request object
-        //System.out.println(jsonRequest);
-        System.out.println("Received request: " + request.getId() + 
-                            " with " + request.toString() + " is Thread: " + Thread.currentThread().threadId());
+        Request request = new Request();                                            // create request object
+        request.setManagerID(managerID);                                            // set manager ID field of request object
+        setUniqueBookingID(request, reducer);                                       // set unique ID to request and reducer object 
+        String jsonRequest = serializeRequest(request);                             // create json from request object
+        System.out.println("Received request: " + request.getId() + " is Thread: " + Thread.currentThread().threadId()
+                            + " with: " + "\n" + "Manager ID: " + request.getManagerID());
         for(Worker worker : workerConfig.workers) {                                 // for each worker configured
             Thread work = new Thread(() -> { 
                 Socket socket = null;
@@ -379,7 +395,6 @@ public class Master
                 String responseBody = null;                                         // body of http response 
                 try {
                     responseBody = extractBody(inputWorker);                        // extract json with results 
-                    //System.out.println(responseBody);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -409,8 +424,90 @@ public class Master
             try {
                 // Send response for succesfull http request
                 sendHttpResponse(out, 404, "Not Found", "{\"message\":\"Bookings not found\"}"
-                , "application/json");                  // send response for unsuccessful http request
+                , "application/json");                  
                 return;
+            } catch (IOException e) {
+                e.printStackTrace();
+            }                                                    
+        } else {
+            try {
+                // Send response for succesfull http request
+                sendHttpResponse(out, 200, "OK", 
+                serializeReducer(reducer) , "application/json");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }                                                    
+        }
+    }
+    // Handles requests for getting bookings by area in given date range
+    private void handleAreaBookRequest(BufferedReader in, OutputStream out) throws IOException, InterruptedException
+    {
+        Reducer reducer = new Reducer();                                            // create reducer object
+        String jsonRoom = extractBody(in);                                          // extract json of room with given data range from http request body
+        //System.out.println(jsonRoom);
+        Room room = deserializeRoom(jsonRoom);                                      // get room object from json 
+        setRequestIDRoom(room, reducer);                                            // set unique ID to room and reducer object
+        String jsonDataRange = serializeRoom(room);                                 // create json of room with given data range from room object
+        System.out.println("Received request: " + room.getId()  + " is Thread: " + Thread.currentThread().threadId()
+                            + " with: " + "\n" +  "Date range: " + room.getDateRange());
+        for(Worker worker : workerConfig.workers) {                                 // for each worker configured
+            Thread work = new Thread(() -> {                                        // create thread 
+                Socket socket = null;
+                try {
+                    socket = new Socket(hostname, worker.port);                     // open socket to worker's port
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }                                 
+                PrintWriter outputWorker = null;                                    // set output to worker
+                try {
+                    outputWorker = new PrintWriter(socket.getOutputStream(), true);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }                                             
+                BufferedReader inputWorker = null;                                  // buffer for inputs from worker
+                try {
+                    inputWorker = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                sendAreaBookRequest(outputWorker, jsonDataRange);                   // send request with given date range
+                // Read the response
+                String responseBody = null;                                         // body of http response 
+                try {
+                    responseBody = extractBody(inputWorker);                        // extract json with results 
+                    //System.out.println(responseBody);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                RoomResult results =  deserializeResults(responseBody);     // deserialize json with searching results
+                //System.out.println("Request ID: " +  results.getId());
+                //results.printRooms();
+                try {
+                    if(results != null) {
+                        reducer.reduce(results.getId(), results);               // reduce results with same id
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                try {
+                    consumeRemainingRequest(inputWorker);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                try {
+                    socket.close();                                         // close socket
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }                                                                                
+            });
+            work.start();
+            work.join();
+        }           
+        if(reducer.getResults().isEmpty()) {                            // if there are no results
+            try {
+                // Send response for unsuccesfull http request
+                sendHttpResponse(out, 404, "Not Found", "{\"message\":\"Bookings not found\"}"
+                , "application/json");          
             } catch (IOException e) {
                 e.printStackTrace();
             }                                                    
@@ -457,10 +554,19 @@ public class Master
         out.println();
         out.println(jsonBody);
     }
-
     // Sends request to get manager's bookings
     private void sendGetBookRequest(PrintWriter out, String jsonBody) {
         out.println("GET /getBooking HTTP/1.1");
+        out.println("Host: localhost");
+        out.println("Content-Type: application/json");
+        out.println("Content-Length: " + jsonBody.length());
+        out.println("Connection: close");
+        out.println();
+        out.println(jsonBody);
+    }
+    // Sends request to get bookings by area in a given date range      
+    private void sendAreaBookRequest(PrintWriter out, String jsonBody) {
+        out.println("GET /getAreaBooking HTTP/1.1");
         out.println("Host: localhost");
         out.println("Content-Type: application/json");
         out.println("Content-Length: " + jsonBody.length());

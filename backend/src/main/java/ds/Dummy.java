@@ -24,9 +24,8 @@ public class Dummy extends Thread {
    private static int port = 8000;
    static String[] inputArgs;
    public static String input;
-   private static ArrayList<Reducer> reducers;        // array list with reducer objects for printing
-   private static String roomName;                           // room name for booking
-   private String regex = "\\d{4}-\\d{2}-\\d{2}";      // regular expression to match the format YYYY-MM-DD
+   private String roomName;                           // room name for booking
+   private String regex = "\\d{4}-\\d{2}-\\d{2}";           // regular expression to match the format YYYY-MM-DD
 
    Dummy(String area, String startDate, String endDate, int guests, double price, int stars) {
       this.filter = new Filter();
@@ -40,7 +39,7 @@ public class Dummy extends Thread {
 
    Dummy(String roomName)
    {
-      Dummy.roomName = roomName;
+      this.roomName = roomName;
    }
 
    Dummy() throws InterruptedException 
@@ -145,7 +144,7 @@ public class Dummy extends Thread {
          case 7:
             Scanner rn = new Scanner(System.in);
             System.out.println("Type the name of the room you wish to book");
-            Dummy.roomName = rn.nextLine();
+            roomName = rn.nextLine();
             input = "book";
             book();         
             break;
@@ -157,12 +156,12 @@ public class Dummy extends Thread {
    // Sends filter to master and prints results
    private void search() throws InterruptedException
    {
-      reducers = new ArrayList<>();       // intialize arraylist with reduce objects
-      this.run();                        // create request thread and send it to master
+      ArrayList<Reducer> reducers = new ArrayList<>();   // array list with reducer objects for printing
+      this.run();                                        // create request thread and send it to master
       Thread.sleep(1000);
-      Collections.sort(reducers);         // sort reducers array list based on current id
-      for(Reducer reducer : reducers) {   // for each reducer obejct in reducers arraylist
-         reducer.printRooms();            // print results
+      Collections.sort(reducers);                        // sort reducers array list based on current id
+      for(Reducer reducer : reducers) {                  // for each reducer obejct in reducers arraylist
+         reducer.printRooms();                           // print results
       }
    }
 
@@ -200,25 +199,25 @@ public class Dummy extends Thread {
       }
       try (PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
          BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
-      if (input.equals("search")) {          // check if input is equal to 'search' 
-         reducers = new ArrayList<>();                // initialize arraylist with reduce objects
-         sendSearchRoomRequest(out);                  // send request for searching a room
-         String json = extractBody(in);               // extract json from http request body
-         if(json == null) {                           // if json string is null 
+      if (input.equals("search")) {                      // check if input is equal to 'search' 
+         ArrayList<Reducer> reducers = new ArrayList<>();         // array list with reducer objects for printing
+         sendSearchRoomRequest(out);                              // send request for searching a room
+         String json = extractBody(in);                           // extract json from http request body
+         if(json == null) {                                       // if json string is null 
             System.out.println("Room not found");     
             return;
          }
-         Reducer reducer = deserializeReducer(json);  // create reducer object from json  
+         Reducer reducer = deserializeReducer(json);              // create reducer object from json  
          synchronized(reducer) {
-            reducers.add(reducer);                    // add reducer objects with results in reducers array
+            reducers.add(reducer);                                // add reducer objects with results in reducers array
          }   
          Thread.sleep(1000);
-         Collections.sort(reducers);                  // sort reducers array list based on current id
-         for(Reducer r : reducers) {                  // for each reducer obejct in reducers arraylist
-            r.printRooms();                           // print results
+         Collections.sort(reducers);                              // sort reducers array list based on current id
+         for(Reducer r : reducers) {                              // for each reducer obejct in reducers arraylist
+            r.printRooms();                                       // print results
          }   
-      }  else if(input.equals("book")) {     // check if input is equal to 'search'
-         sendBookRoomRequest(out);                    // send request for booking a room
+      }  else if(input.equals("book")) {                 // check if input is equal to 'search'
+         sendBookRoomRequest(out);                                // send request for booking a room
          // Read the response
          String responseLine;
          while ((responseLine = in.readLine()) != null) {
@@ -287,33 +286,27 @@ public class Dummy extends Thread {
    }
 
    public static void main(String[] args) throws IOException, InterruptedException {
-      new Dummy().start();
-      /* 
+      //new Dummy().start(); 
       sc = new Scanner(System.in);
       System.out.println("Give input");
       input = sc.nextLine();
       sc.close();
       if(input .equals("search")) {
          // Search()
-         reducers = new ArrayList<>(); 
+         ArrayList<Reducer> reducers = new ArrayList<>(); 
          for(int i = 0; i < 4; i++) {
-            //(new Dummy("Larisa", "3/4/24", 3, 30.0, 3)).start();
-            //(new Dummy("Lamia", "4/4/24", 2, 40.0, 4)).start(); 
-            //(new Dummy("Downtown", "2024-04-01", "2024-04-06", 0, 180.0, 0)).start();
-            //new Dummy(null, "2024-04-02", "2024-04-07", 0, 0.0, 0).start(); 
             (new Dummy(null, "2024-04-06", "2024-04-07", 0, 0.0, 4)).start(); 
-            //new Dummy().start();
          }
          Thread.sleep(1000);
          Collections.sort(reducers);         // sort reducers array list based on current id
          for(Reducer reducer : reducers) {   // for each reducer obejct in reducers arraylist
             reducer.printRooms();            // print results        
          } 
-      } else {
+      } else if (input .equals("book")){
          // Book()         
-         new Dummy("Cozy Cabin").start();
-         //new Dummy("Mountain Chalet").start();
+         new Dummy("Beach House").start();
+         new Dummy("City Apartment").start();
+         new Dummy("Mountain Chalet").start();
       }
-      */
    }  
 }

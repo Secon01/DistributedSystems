@@ -144,6 +144,12 @@ public class Room extends Request
     public void setAvailable(boolean available) {
         this.available = available;
     }
+
+    public void setDateRange(String startDate, String endDate) {
+        this.dateRange = new DateRange();
+        this.dateRange.setStartDate(startDate);
+        this.dateRange.setEndDate(endDate);
+    }
     // Computes how many non null or 0 values does this object has
     public int numNonZero()
     {
@@ -193,8 +199,7 @@ public class Room extends Request
                "Image: " + this.roomName + "\n" +
                "Available: " + this.available + "\n" +
                "Start date: " + this.startDate + "\n" +
-               "End date: " + this.endDate + "\n" +
-               "Manager Id: " + this.getManagerID(); 
+               "End date: " + this.endDate;
     }
 
     public static void main(String[] args) {
