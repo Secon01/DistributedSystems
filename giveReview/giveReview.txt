@@ -137,22 +137,20 @@ private void handleNewReviewRequest(BufferedReader in, OutputStream out) throws 
      return review;
  }
 
- private void giveReview(String roomForReview ,int review)
-    {
-        int star = 0;
-        int numberoff=0;
-        for(Room room : rooms) {
-            if(room.getRoomName() == roomForReview){     
-                int numberof = room.getReviews();
-                numberof ++ ;
+  private synchronized void giveReview(String roomForReview, double review) {
+        boolean roomFound = false;
+        for (Room room : rooms) {
+            if (room.getRoomName().equals(roomForReview)) {
+                int numberof = room.getReviews() + 1;
+                double starof = room.getStars();
+                double sum = starof * room.getReviews();
                 room.setReviews(numberof);
-                int starof = room.getStars();
-                int sum = starof * (numberof -1 )  ;
-                starof = sum + star;
-                room.setStars((sum + review)/numberoff);
-            System.out.println(room.getReviews() + room.getStars());
+                room.setStars((sum + review) / numberof);
+                System.out.println("Review added for room: " + room.getRoomName()+ ", Current stars: " + room.getStars());
+                roomFound = true;
             }
         }
+        if (!roomFound) {
+            System.out.println("No room with the name '" + roomForReview + "' found.");
     }
-
-ß
+    }

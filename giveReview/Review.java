@@ -11,7 +11,7 @@ public class Review extends Request {
         this.roomForReview=room;
     }
     //setters
-    public void setReview(double r){
+    public void setReview(int r){
         this.review = r;
     }
     public void setRoomForReview(String ro){
