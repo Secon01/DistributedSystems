@@ -25,6 +25,7 @@ public class Dummy extends Thread {
    static String[] inputArgs;
    public static String input;
    private String roomName;                           // room name for booking
+   private Review review;
    private String regex = "\\d{4}-\\d{2}-\\d{2}";           // regular expression to match the format YYYY-MM-DD
 
    Dummy(String area, String startDate, String endDate, int guests, double price, int stars) {
@@ -40,6 +41,11 @@ public class Dummy extends Thread {
    Dummy(String roomName)
    {
       this.roomName = roomName;
+   }
+
+   Dummy(double stars, String roomName)
+   {
+      review = new Review(stars, roomName);
    }
 
    Dummy() throws InterruptedException 
@@ -223,7 +229,14 @@ public class Dummy extends Thread {
          while ((responseLine = in.readLine()) != null) {
             System.out.println(responseLine); 
          }   
-      } 
+      } else if(input.equals("review")) {       // check if input is equal to 'search'
+         sendNewReviewRequest(out);                         // send request for booking a room
+         // Read the response
+         String responseLine;
+         while ((responseLine = in.readLine()) != null) {
+         System.out.println(responseLine);
+         }
+      }
       else {
          System.out.println("Unknown command. Use 'getRoom' or 'newRoom'.");
          sc.close();                                  // close scanner
@@ -285,6 +298,17 @@ public class Dummy extends Thread {
       out.println(jsonBody);
    }
 
+   private void sendNewReviewRequest(PrintWriter out) {
+      String jsonBody = new Gson().toJson(this.review);
+      //System.out.println(jsonBody);
+      out.println("POST /giveReview HTTP/1.1");
+      out.println("Host: localhost");
+      out.println("Content-Type: application/json");
+      out.println("Content-Length: " + jsonBody.length());
+      out.println("Connection: close");
+      out.println();
+      out.println(jsonBody);
+   }
    public static void main(String[] args) throws IOException, InterruptedException {
       //new Dummy().start(); 
       sc = new Scanner(System.in);
@@ -302,11 +326,25 @@ public class Dummy extends Thread {
          for(Reducer reducer : reducers) {   // for each reducer obejct in reducers arraylist
             reducer.printRooms();            // print results        
          } 
-      } else if (input .equals("book")){
-         // Book()         
-         new Dummy("Beach House").start();
-         new Dummy("City Apartment").start();
-         new Dummy("Mountain Chalet").start();
+      } else if (input.equals("book")){
+         // Book()
+         for(int i = 0; i < 1; i++) {
+            new Dummy("Double Room").start();
+            new Dummy("Single Room").start();
+            new Dummy("Family Room").start();
+            new Dummy("Suite").start();
+            new Dummy("Deluxe Suite").start();
+            new Dummy("Luxury Suite 1").start();
+            new Dummy("Economy Room").start();
+            new Dummy("Penthouse").start();
+            new Dummy("Standard Room").start();
+            new Dummy("Executive Suite").start(); 
+            Thread.sleep(1000);  
+         }         
+      } else if(input.equals("review")) {
+            new Dummy(4.2,"Single Room").start();
+            new Dummy(3.1,"Luxury Suite 1").start();
+            new Dummy(2.6,"Executive Suite").start();
       }
    }  
 }

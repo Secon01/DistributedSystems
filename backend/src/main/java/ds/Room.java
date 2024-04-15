@@ -11,7 +11,7 @@ public class Room extends Request
     private String roomName;
     private int guests;
     private double price;
-    private int stars;
+    private double stars;
     private String area;
     private int reviews;
     private String roomImage;
@@ -20,7 +20,7 @@ public class Room extends Request
     private boolean available;
     private DateRange dateRange;
     // Constructor
-    Room(int id, String name, int guests, double price, int stars,
+    Room(int id, String name, int guests, double price, double stars,
             String area, int reviews, String image, String startDate, String endDate, boolean available)
     {
         this.setManagerID(id);      
@@ -40,7 +40,7 @@ public class Room extends Request
     }
     // Constructor for null values of start & end dates
     // because of LocalDate parse() method
-    Room(int id, String name, int guests, double price, int stars,
+    Room(int id, String name, int guests, double price, double stars,
         String area, int reviews, String image, boolean available)
     {
         this.setManagerID(id);
@@ -56,9 +56,7 @@ public class Room extends Request
     // Default constructor
     Room()
     {
-
     }
-
     // Getters
     public DateRange getDateRange() {
         return dateRange;
@@ -76,7 +74,7 @@ public class Room extends Request
         return price;
     }
 
-    public int getStars() {
+    public double getStars() {
         return stars;
     }
 
@@ -117,7 +115,7 @@ public class Room extends Request
         this.price = price;
     }
 
-    public void setStars(int stars) {
+    public void setStars(double stars) {
         this.stars = stars;
     }
 

@@ -122,6 +122,12 @@ public class Worker
         return new Gson().fromJson(json, Request.class);
     }
 
+    private static Review deserializeReview(String jsonString)
+    {
+        return new Gson().fromJson(jsonString, Review.class);
+
+    }    
+
     // Checking if worker has a room according to the incoming filter
     // and returns array with indexes of rooms found
     private ArrayList<Integer> hasRoom(Filter filter) throws InterruptedException
@@ -156,30 +162,11 @@ public class Worker
                     fieldR.setAccessible(true);
                     Object valueF = fieldF.get(filter);
                     Object valueR = fieldR.get(room);
-                    //System.out.println(propertyName + ":" + valueF + " DEBUG");
-                    // System.out.println(propertyName + ":" + valueR + " DEBUG");
-
                     // Both values are not null or 0, compare them
                     if (valueF != null && valueR != null && !valueF.equals(0) && !valueR.equals(0) && 
                         !valueF.equals(0.0) && !valueR.equals(0.0)) {
                         if (valueF.equals(valueR)) {
-                            result = true;   // properties are equal
-                            //System.out.println("Yes!" + valueF);
-                        //} else if(valueF.getClass() == DateRange.class) {                  // if value of filter belongs to data range class
-                        //    DateRange dr = (DateRange) valueF;                              // cast value to data range object
-                        //    if(dr.getStartDate() == null || dr.getEndDate() == null) {      // if start date or end date is null  
-                        //        continue;
-                        //    } //else {
-                            //    System.out.println("DEBUG INNER IF");
-                            //    result = false; // properties are not equal
-                            //    indexes.clear();
-                            //    break;
-                            //}
-                        //} else {
-                        //    System.out.println("DEBUG OUTER IF");
-                        //    result = false; // properties are not equal
-                        //    indexes.clear();
-                        //    break;
+                            result = true;          // properties are equal
                         }
                     } else if(valueF == null || valueR == null || valueF.equals(0) || valueR.equals(0) || 
                             valueF.equals(0.0) || valueR.equals(0.0)) {
@@ -189,11 +176,8 @@ public class Worker
                     e.printStackTrace();
                 }
             }
-            //System.out.println("result = " + result);
             if(result) {
                 indexes.add(rooms.indexOf(room));       // add index of iterated room to array
-                //System.out.println(room.getArea());
-                //finalResult = true;                     // set final result equal to true
             } 
         }
         //System.out.println("INDEXES: " + indexes + " Thread ID: " + Thread.currentThread().threadId());
@@ -262,7 +246,7 @@ public class Worker
         ArrayList<Integer> indexes = new ArrayList<>();                             // array to collect room indexes of rooms
         for(Room room: rooms) {                                                     // for each room in rooms array
             if(room.getAvailable() == false                                         // if current room is booked and 
-                && dateRange.isWithinRange(room.getDateRange())) {                  // room's date range is within the given date range
+                && room.getDateRange().isWithinRange(dateRange)) {                  // room's date range is within the given date range
                 indexes.add(rooms.indexOf(room));                                   // add to indexes array the index of current room
                 //System.out.println("yes");
             }
@@ -286,18 +270,24 @@ public class Worker
         }
         return results;
     }
-
-    private void giveReview(String roomName ,int star){
-        for(Room room : rooms) {
-            if(room.getRoomName() == roomName){     
-                int numberof = room.getReviews();
-                numberof ++ ;
+    // Gives reviews
+    private synchronized boolean giveReview(Review review) {
+        boolean roomFound = false;
+        //System.out.println(review.getRoomForReview());
+        for (Room room : rooms) {
+            if (room.getRoomName().equals(review.getRoomForReview())) {
+                int numberof = room.getReviews() + 1;
+                double starof = room.getStars();
+                double sum = starof * room.getReviews();
                 room.setReviews(numberof);
-                int starof = room.getStars();
-                starof = (starof + star)/numberof;
-                room.setStars(starof);
-            }
+                room.setStars((sum + review.getReview()) / numberof);
+                //System.out.println("Review added for room: " + room.getRoomName()+ ", Current stars: " + room.getStars());
+                roomFound = true;
+            } //else {
+            //    System.out.println("No room with the name '" + review.getRoomForReview() + "' found.");
+            //}
         }
+        return roomFound;
     }
 
     // Opens worker's server side
@@ -323,8 +313,11 @@ public class Worker
             //System.out.println("Received get booking request...");
             handleGetBookRequest(input, output);
         } else if(requestLine.startsWith("GET /getAreaBooking")) {
-            System.out.println("Received get area booking request...");
+            //System.out.println("Received get area booking request...");
             handleAreaBookRequest(input, output);
+        } else if(requestLine.startsWith("POST /giveReview")) {
+            //System.out.println("Received post review request...");
+            handleNewReviewRequest(input, output); 
         } else {
             sendNotImplementedResponse(output);
         }
@@ -376,6 +369,24 @@ public class Worker
         }
         //System.out.println("Room added...");
     }
+    // Handles requests for given reviews
+    private void handleNewReviewRequest(BufferedReader in, OutputStream out) throws IOException, InterruptedException {
+        String jsonReview = extractBody(in);                                                                // extract json from request body
+        Review review = deserializeReview(jsonReview);                                                  // create review object from json input file
+        System.out.println("Received request: " + review.getId() + " with " + review.toString());
+        boolean done = giveReview(review);                                                                                  // get array with results for reducer
+        if (done) { 
+            //System.out.println("->->->" + review);
+            sendHttpResponse(out, 200, "OK", "{\"message\":\"Review added\"}"
+                        , "application/json");                                              // send response for succesfull http request
+            //System.out.println(" Review added...");
+            //System.out.println("+-----------------------------+");
+        }else{
+            sendHttpResponse(out, 404, "Not Found", "{\"message\":\"No such room\"}", 
+            "application/json"); 
+            //System.out.println("No such room as" + review.toString());
+        }
+    }    
     // Handles requests for getting bookings
     private void handleGetBookRequest(BufferedReader in, OutputStream out) throws IOException, InterruptedException 
     {

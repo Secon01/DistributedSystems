@@ -167,6 +167,9 @@ public class Master
         } else if(requestLine.startsWith("GET /getAreaBooking")) {
             System.out.println("Received get area booking request...");
             handleAreaBookRequest(input, output);
+        } else if(requestLine.startsWith("POST /giveReview")) {
+            //System.out.println("Received get booking request...");
+            handleNewReviewRequest(input, output); 
         } else {
             sendNotImplementedResponse(output);
         }
@@ -358,6 +361,67 @@ public class Master
         book.start();
         book.join();
     }
+
+    private void handleNewReviewRequest(BufferedReader in, OutputStream out) throws IOException, InterruptedException {
+        String jsonReview = extractBody(in);                                            // extract json from request body
+        System.out.println(jsonReview);
+        Review review = new Gson().fromJson(jsonReview, Review.class);                              // create filter object from json 
+        //setRequestID(request, review);                                              // set a unique id to filter object                                      // convert filter object back to json
+        System.out.println("Received request: " + " with " + review.toString() + " is Thread: " + Thread.currentThread().threadId());
+        final String json = jsonReview;     // make it final to work
+        // Client side of master
+        int workerID = hashFunc(review.getRoomForReview(), workerConfig.nofWorkers);           // hash room name and get worker id to send request  
+        int workerPort = getPort(workerID);                                         // for each worker configured
+        Thread rev = new Thread(() -> {
+            Socket socket = null;
+            try {
+                socket = new Socket(hostname, workerPort);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }                                 // open socket to worker's port
+            PrintWriter output = null;
+            try {
+                output = new PrintWriter(socket.getOutputStream(), true);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }                         // set output
+            BufferedReader inputWorker = null;
+            try {
+                inputWorker = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }        // buffer for inputs from worker            
+            sendNewReviewRequest(output,json);                                                              // send request
+            // Read the response
+            String responseBody = null;                                
+            try {
+                responseBody = extractBody(inputWorker);                // extract json with results 
+                if(responseBody.equals("{\"message\":\"No such room\"}")) {
+                    sendHttpResponse(out, 404, "Not Found", "{\"message\":\"No such room\"}", 
+                    "application/json");                                    // send response for unsuccessful http request            
+                } else if(responseBody.startsWith("{\"message\":\"Review added\"}")) {
+                    sendHttpResponse(out, 200, "OK", "{\"message\":\"Review added\"}",
+                    "application/json");                                    // send response for successful http request             
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }     
+            System.out.println(responseBody);       
+            //System.out.println(responseBody.toString());    
+            try {
+                consumeRemainingRequest(inputWorker);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {
+                socket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }                                                                             // close socket               
+        });
+        rev.start();
+        rev.join();
+    }
     // Handles requests for getting bookings
     private void handleGetBookRequest(BufferedReader in, OutputStream out) throws IOException, InterruptedException 
     {
@@ -415,7 +479,10 @@ public class Master
                     socket.close();                                         // close socket
                 } catch (IOException e) {
                     e.printStackTrace();
-                }                                                                                
+                } 
+                //synchronized(reducer) {
+
+                //}                                                                               
             });
             work.start();                                                   // start thread
             work.join();                                                    // call external thread to wait for inside thread to finish
@@ -554,6 +621,16 @@ public class Master
         out.println();
         out.println(jsonBody);
     }
+
+    private void sendNewReviewRequest (PrintWriter out, String jsonBody){
+        out.println("POST /giveReview HTTP/1.1");
+        out.println("Host: localhost");
+        out.println("Content-Type: application/json");
+        out.println("Content-Length: " +  jsonBody.length());
+        out.println("Connection: close");
+        out.println();
+        out.println(jsonBody);
+    }
     // Sends request to get manager's bookings
     private void sendGetBookRequest(PrintWriter out, String jsonBody) {
         out.println("GET /getBooking HTTP/1.1");
@@ -574,6 +651,7 @@ public class Master
         out.println();
         out.println(jsonBody);
     }
+
     // Sends error message when the server is incapable of performing the request
     private static void sendNotImplementedResponse(OutputStream out) throws IOException {
         sendHttpResponse(out, 501, "Not Implemented", "", "text/plain");
@@ -600,7 +678,7 @@ public class Master
     // Extract content length
     int contentLength = 0;
         while (!(line = in.readLine()).isEmpty()) {
-            System.out.println(line);                   // print http response
+            //System.out.println(line);                   // print http response
             if (line.toLowerCase().startsWith("content-length:")) {
                 contentLength = Integer.parseInt(line.substring("content-length:".length()).trim());
             }
@@ -646,7 +724,7 @@ public class Master
         //    return;
         //}
         //System.out.println(workerConfig.toString()); 
-        String filepath = JsonUtils.readFileToString("/home/secon/Documents/GitHub/DistributedSystems/workers.json"); // read file from args and convert it to string
+        String filepath = JsonUtils.readFileToString("C:/Users/sotir/DS/DistributedSystems/workers.json"); // read file from args and convert it to string
         Gson gson = new Gson();
         workerConfig = gson.fromJson(filepath, WorkerConfig.class);    // create worker config object from json
         new Master();

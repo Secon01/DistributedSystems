@@ -1,7 +1,6 @@
 package ds;
 
 //JSON related packages
-//import org.json.JSONException; //(not sure if needed yet)
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDate;
@@ -10,12 +9,15 @@ import java.util.Collections;
 import java.util.Scanner;
 import java.util.regex.Pattern;
 import org.json.JSONObject;
+
+import org.eclipse.collections.api.bag.MutableBag;
+import org.eclipse.collections.impl.factory.Bags;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
 import java.io.*;
 import java.net.Socket;
-
 
 public class ConsoleApp3 extends Thread {
     private boolean done;
@@ -31,6 +33,7 @@ public class ConsoleApp3 extends Thread {
     private static String hostname = "localhost";       
     private static int port = 8000;
     private static String input;
+    private static ArrayList<Reducer> reducers;
     // Constructor for add room function 
     ConsoleApp3(Room room) throws IOException
     {
@@ -197,6 +200,7 @@ public class ConsoleApp3 extends Thread {
             .create();
         return gson.toJson(room);
     } 
+    /*
     // Returns number of bookings per area
     private int areaBookings(String area, RoomResult results) 
     {
@@ -208,6 +212,7 @@ public class ConsoleApp3 extends Thread {
         }
         return bookings;
     }
+    */
     public void run() 
     {
         Socket socket = null;
@@ -226,37 +231,8 @@ public class ConsoleApp3 extends Thread {
                     System.out.println(responseLine);
                 }
             } else if(input.equals("get booking")) {               // check if input is equal to 'get booking'
-                ArrayList<Reducer> reducers = new ArrayList<>();            // array list with reducer objects for printing
+                reducers = new ArrayList<>();            // array list with reducer objects for printing
                 sendGetBookRequest(out);                                    // send request in order to get the bookings
-                String json = extractBody(in);                              // extract json from http request body 
-                System.out.println(json);
-                if (!json.isEmpty()) {
-                    Reducer reducer = deserializeReducer(json);     // create reducer object from json
-                    synchronized(reducer) {
-                       reducers.add(reducer);                       // add reducer objects with results in reducers array
-                    }
-                    for(RoomResult result: reducer.getResults()) {
-                        String area = null;
-                        for(Room room : result.getRooms()) {
-                            areaBookings(room.getArea(), result);
-                        }
-                    }
-                /*     
-                    Thread.sleep(1000);
-                    Collections.sort(reducers);                     // sort reducers array list based on current id
-                    for(Reducer r : reducers) {                   // for each reducer obejct in reducers arraylist
-                        r.printRooms();                           // print results
-                    }
-                */    
-                } else {
-                    String responseLine;
-                    while ((responseLine = in.readLine()) != null) {
-                        System.out.println(responseLine);
-                    }    
-                }
-            } else if(input.equals("area booking")) {              // check if input is equal to 'area bookings'
-                ArrayList<Reducer> reducers = new ArrayList<>();            // array list with reducer objects for printing
-                sendAreaBookRequest(out);
                 String json = extractBody(in);                              // extract json from http request body 
                 //System.out.println(json);
                 if (!json.isEmpty()) {
@@ -264,11 +240,44 @@ public class ConsoleApp3 extends Thread {
                     synchronized(reducer) {
                        reducers.add(reducer);                       // add reducer objects with results in reducers array
                     }
+                    //Thread.sleep(1000);
+                    //Collections.sort(reducers);                     // sort reducers array list based on current id
+                    //for(Reducer r : reducers) {                   // for each reducer obejct in reducers arraylist
+                    //    r.printRooms();                           // print results
+                    //}
+                } else {
+                    String responseLine;
+                    while ((responseLine = in.readLine()) != null) {
+                        System.out.println(responseLine);
+                    }    
+                }
+            } else if(input.equals("area booking")) {              // check if input is equal to 'area bookings'
+                reducers = new ArrayList<>();            // array list with reducer objects for printing
+                sendAreaBookRequest(out);
+                String json = extractBody(in);                              // extract json from http request body 
+                if (!json.isEmpty()) {
+                    Reducer reducer = deserializeReducer(json);     // create reducer object from json
+                    synchronized(reducer) {
+                       reducers.add(reducer);                       // add reducer objects with results in reducers array
+                    }
+                    MutableBag<String> areaBookings = Bags.mutable.empty();
+                    for(RoomResult result: reducer.getResults()) {
+                        //String area = null;
+                        for(Room room : result.getRooms()) {
+                            int bookings = 1;
+                            System.out.println(room.toString());
+                            System.out.println();
+                            areaBookings.addOccurrences(room.getArea(), bookings);
+                        }
+                    }
+                    areaBookings.forEachWithOccurrences((key, occurrences) -> System.out.println(key + ": " +  occurrences));               
+                    /* 
                     Thread.sleep(1000);
                     Collections.sort(reducers);                     // sort reducers array list based on current id
                     for(Reducer r : reducers) {                   // for each reducer obejct in reducers arraylist
                         r.printRooms();                           // print results
-                    }    
+                    }
+                    */    
                 } else {
                     String responseLine;
                     while ((responseLine = in.readLine()) != null) {
@@ -281,8 +290,6 @@ public class ConsoleApp3 extends Thread {
                 return;
             }
         } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
             e.printStackTrace();
         } 
         finally {
@@ -352,12 +359,13 @@ public class ConsoleApp3 extends Thread {
         out.println();
         out.println(jsonBody);
     }
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, InterruptedException {
         //new ConsoleApp3().start();
         Scanner sc = new Scanner(System.in);
         System.out.println("Give input");
         String in = sc.nextLine();
         if(in.equals("add room")) {
+            /* 
             Room room1 = new Room(12,"Luxury Suite", 2, 200.0, 5,
             "Downtown", 100, "luxury_suite.jpg", "2024-04-01", "2024-04-07", true);
             Room room2 = new Room(12,"Cozy Cabin", 4, 150.0, 4,
@@ -370,22 +378,59 @@ public class ConsoleApp3 extends Thread {
                         "Rural", 85, "country_cottage.jpg", "2024-04-05", "2024-04-11", true);
             Room room6 = new Room(34, "Mountain Chalet", 5, 250.0, 5,
                         "Mountains", 110, "mountain_chalet.jpg", "2024-04-06", "2024-04-12", true);
-            input = in;
-            new ConsoleApp3(room1).start();
-            new ConsoleApp3(room2).start();
-            new ConsoleApp3(room3).start();       
-            new ConsoleApp3(room4).start();       
-            new ConsoleApp3(room5).start();       
-            new ConsoleApp3(room6).start();                                 
+            */
+            
+            for(int i = 0; i < 1; i++) {
+                Room room1 = new Room(7, "Luxury Suite 1", 2, 200.0, 5,
+                        "Athens", 100, "luxury_suite_1.jpg", "2024-04-01", "2024-04-07", true);
+                Room room2 = new Room(7, "Deluxe Suite", 3, 250.0, 4,
+                        "Athens", 90, "deluxe_suite.jpg", "2024-04-02", "2024-04-08", true);
+                Room room3 = new Room(7, "Standard Room", 2, 150.0, 3,
+                        "Thessaloniki", 80, "standard_room.jpg", "2024-04-03", "2024-04-09", true);
+                Room room4 = new Room(7, "Economy Room", 1, 100.0, 2,
+                        "Thessaloniki", 70, "economy_room.jpg", "2024-04-04", "2024-04-10", true);
+                Room room5 = new Room(7, "Family Room", 4, 300.0, 5,
+                        "Lamia", 120, "family_room.jpg", "2024-04-05", "2024-04-11", true);
+                Room room6 = new Room(13, "Suite", 2, 180.0, 4,
+                        "Lamia", 110, "suite.jpg", "2024-04-06", "2024-04-12", true);
+                Room room7 = new Room(13, "Single Room", 1, 120.0, 3,
+                        "Crete", 60, "single_room.jpg", "2024-04-07", "2024-04-13", true);
+                Room room8 = new Room(13, "Double Room", 2, 220.0, 4,
+                        "Crete", 80, "double_room.jpg", "2024-04-08", "2024-04-14", true);
+                Room room9 = new Room(13, "Executive Suite", 3, 280.0, 5,
+                        "Larisa", 150, "executive_suite.jpg", "2024-04-09", "2024-04-15", true);
+                Room room10 = new Room(13, "Penthouse", 6, 500.0, 5,
+                        "Larisa", 200, "penthouse.jpg", "2024-04-10", "2024-04-16", true);         
+                input = in;
+                new ConsoleApp3(room1).start();
+                new ConsoleApp3(room2).start();
+                new ConsoleApp3(room3).start();       
+                new ConsoleApp3(room4).start();       
+                new ConsoleApp3(room5).start();       
+                new ConsoleApp3(room6).start(); 
+                new ConsoleApp3(room7).start(); 
+                new ConsoleApp3(room8).start(); 
+                new ConsoleApp3(room9).start();
+                new ConsoleApp3(room10).start();              
+            }
         } else if(in.equals("get booking")) {
             input = in;
-            new ConsoleApp3(12).start();
+            for(int i = 0; i < 1; i++) {
+                new ConsoleApp3(7).start();
+                new ConsoleApp3(13).start();
+                Thread.sleep(1000);
+                Collections.sort(reducers);                     // sort reducers array list based on current id
+                for(Reducer r : reducers) {                   // for each reducer obejct in reducers arraylist
+                    r.printRooms();                           // print results
+                }
+
+            }
         } else if(in.equals("area booking")) {
             input = in;
             for(int i = 0; i < 1; i++) {
-                new ConsoleApp3("2024-04-06", "2024-04-07").start();
+                new ConsoleApp3("2024-04-01", "2024-04-16").start();
             }         
         }
-        sc.close();
+        sc.close();   
     }
 }

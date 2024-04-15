@@ -35,7 +35,8 @@ public class DateRange
     // Checks if one date range object is within the range of this date range object
     public boolean isWithinRange(DateRange other) 
     {
-        return !this.startDate.isBefore(other.startDate) && !this.endDate.isAfter(other.endDate);
+        return (this.startDate.isAfter(other.startDate) || this.startDate.isEqual(startDate)) && 
+                (this.endDate.isBefore(other.endDate) ||this.endDate.isEqual(other.endDate));
     }
 
     // Override equals method to compare if a given data range object 
