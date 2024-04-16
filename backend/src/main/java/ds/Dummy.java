@@ -27,6 +27,7 @@ public class Dummy extends Thread {
    private String roomName;                           // room name for booking
    private Review review;
    private String regex = "\\d{4}-\\d{2}-\\d{2}";           // regular expression to match the format YYYY-MM-DD
+   private static ArrayList<Reducer> reducers;
 
    Dummy(String area, String startDate, String endDate, int guests, double price, int stars) {
       this.filter = new Filter();
@@ -51,7 +52,7 @@ public class Dummy extends Thread {
    Dummy() throws InterruptedException 
    {
       this.filter = new Filter();
-      runMenu();
+      //runMenu();
    }
 
    public void header() {
@@ -206,36 +207,28 @@ public class Dummy extends Thread {
       try (PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
          BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
       if (input.equals("search")) {                      // check if input is equal to 'search' 
-         ArrayList<Reducer> reducers = new ArrayList<>();         // array list with reducer objects for printing
+         reducers = new ArrayList<>();         // array list with reducer objects for printing
          sendSearchRoomRequest(out);                              // send request for searching a room
          String json = extractBody(in);                           // extract json from http request body
-         if(json == null) {                                       // if json string is null 
-            System.out.println("Room not found");     
+         if(json.startsWith("{\"message\"")) {             // if json string is null 
+            System.out.println(json);     
             return;
+         } else {
+            Reducer reducer = deserializeReducer(json);              // create reducer object from json  
+            synchronized(reducer) {
+               reducers.add(reducer);                                // add reducer objects with results in reducers array
+            }   
          }
-         Reducer reducer = deserializeReducer(json);              // create reducer object from json  
-         synchronized(reducer) {
-            reducers.add(reducer);                                // add reducer objects with results in reducers array
-         }   
-         Thread.sleep(1000);
-         Collections.sort(reducers);                              // sort reducers array list based on current id
-         for(Reducer r : reducers) {                              // for each reducer obejct in reducers arraylist
-            r.printRooms();                                       // print results
-         }   
       }  else if(input.equals("book")) {                 // check if input is equal to 'search'
          sendBookRoomRequest(out);                                // send request for booking a room
          // Read the response
-         String responseLine;
-         while ((responseLine = in.readLine()) != null) {
-            System.out.println(responseLine); 
-         }   
+         String responseBody = extractBody(in);
+         System.out.println(responseBody);
       } else if(input.equals("review")) {       // check if input is equal to 'search'
          sendNewReviewRequest(out);                         // send request for booking a room
          // Read the response
-         String responseLine;
-         while ((responseLine = in.readLine()) != null) {
-         System.out.println(responseLine);
-         }
+         String responseBody = extractBody(in);
+         System.out.println(responseBody);
       }
       else {
          System.out.println("Unknown command. Use 'getRoom' or 'newRoom'.");
@@ -243,8 +236,6 @@ public class Dummy extends Thread {
          return;
       }
       } catch (IOException e) {
-         e.printStackTrace();
-      } catch (InterruptedException e) {
          e.printStackTrace();
       } finally {
          try {
@@ -254,7 +245,6 @@ public class Dummy extends Thread {
          }
       }         
    }
-
    // Extracts body from http search room request
    private static String extractBody(BufferedReader in) throws IOException 
    {
@@ -317,8 +307,7 @@ public class Dummy extends Thread {
       sc.close();
       if(input .equals("search")) {
          // Search()
-         ArrayList<Reducer> reducers = new ArrayList<>(); 
-         for(int i = 0; i < 1; i++) {
+         for(int i = 0; i < 3; i++) {
             (new Dummy(null, "2024-04-06", "2024-04-07", 0, 0.0, 0)).start(); 
          }
          Thread.sleep(1000);
@@ -340,13 +329,12 @@ public class Dummy extends Thread {
             new Dummy("Penthouse").start();
             new Dummy("Standard Room").start();
             new Dummy("Executive Suite").start();
-            */ 
-            //Thread.sleep(1000);  
+            */  
          }         
       } else if(input.equals("review")) {
             new Dummy(4.2,"Single Room").start();
             new Dummy(3.1,"Luxury Suite 1").start();
-            new Dummy(2.6,"Executive Suite").start();
+            new Dummy(2.6,"Kostas Camping").start();
       }
    }  
 }

@@ -226,31 +226,19 @@ public class ConsoleApp3 extends Thread {
             if (input.equals("add room")) {                     // check if input is equal to 'add room'
                 sendPostNewRoomRequest(out, finalJSONString);
                 // Read the response
-                String responseLine;
-                while ((responseLine = in.readLine()) != null) {
-                    System.out.println(responseLine);
-                }
-                System.out.println();
+                String responseLine = extractBody(in);
+                System.out.println(responseLine);
             } else if(input.equals("get booking")) {               // check if input is equal to 'get booking'
                 reducers = new ArrayList<>();            // array list with reducer objects for printing
                 sendGetBookRequest(out);                                    // send request in order to get the bookings
                 String json = extractBody(in);                              // extract json from http request body 
-                //System.out.println(json);
-                if (!json.isEmpty()) {
+                if (!json.startsWith("{\"message\"")) {
                     Reducer reducer = deserializeReducer(json);     // create reducer object from json
                     synchronized(reducer) {
                        reducers.add(reducer);                       // add reducer objects with results in reducers array
                     }
-                    //Thread.sleep(1000);
-                    //Collections.sort(reducers);                     // sort reducers array list based on current id
-                    //for(Reducer r : reducers) {                   // for each reducer obejct in reducers arraylist
-                    //    r.printRooms();                           // print results
-                    //}
                 } else {
-                    String responseLine;
-                    while ((responseLine = in.readLine()) != null) {
-                        System.out.println(responseLine);
-                    }    
+                    System.out.println(json);                 // read the response
                 }
             } else if(input.equals("area booking")) {              // check if input is equal to 'area bookings'
                 reducers = new ArrayList<>();            // array list with reducer objects for printing
@@ -263,22 +251,14 @@ public class ConsoleApp3 extends Thread {
                     }
                     MutableBag<String> areaBookings = Bags.mutable.empty();
                     for(RoomResult result: reducer.getResults()) {
-                        //String area = null;
                         for(Room room : result.getRooms()) {
                             int bookings = 1;
-                            System.out.println(room.toString());
-                            System.out.println();
+                            //System.out.println(room.toString());
+                            //System.out.println();
                             areaBookings.addOccurrences(room.getArea(), bookings);
                         }
                     }
                     areaBookings.forEachWithOccurrences((key, occurrences) -> System.out.println(key + ": " +  occurrences));               
-                    /* 
-                    Thread.sleep(1000);
-                    Collections.sort(reducers);                     // sort reducers array list based on current id
-                    for(Reducer r : reducers) {                   // for each reducer obejct in reducers arraylist
-                        r.printRooms();                           // print results
-                    }
-                    */    
                 } else {
                     String responseLine;
                     while ((responseLine = in.readLine()) != null) {
@@ -308,17 +288,12 @@ public class ConsoleApp3 extends Thread {
         // Extract content length
         int contentLength = 0;
         while (!(line = in.readLine()).isEmpty()) {
-            System.out.println(line);
+            //System.out.println(line);
             if (line.toLowerCase().startsWith("content-length:")) {
             contentLength = Integer.parseInt(line.substring("content-length:".length()).trim());
             }
         }    
         // Read the body
-        //if (contentLength == 32) {      // content length of error message
-        //    while ((line = in.readLine()) != null) {
-        //        System.out.println(line);
-        //    }
-        //} else 
         if(contentLength > 0) {
             char[] buffer = new char[contentLength];
             in.read(buffer, 0, contentLength);
@@ -403,25 +378,15 @@ public class ConsoleApp3 extends Thread {
                         "Larisa", 200, "penthouse.jpg", "2024-04-10", "2024-04-16", true);         
                 input = in;
                 new ConsoleApp3(room1).start();
-                Thread.sleep(100);
                 new ConsoleApp3(room2).start();
-                Thread.sleep(100);
-                new ConsoleApp3(room3).start();
-                Thread.sleep(100);       
-                new ConsoleApp3(room4).start();
-                Thread.sleep(100);       
-                new ConsoleApp3(room5).start();
-                Thread.sleep(100);       
-                new ConsoleApp3(room6).start();
-                Thread.sleep(100); 
-                new ConsoleApp3(room7).start();
-                Thread.sleep(100); 
-                new ConsoleApp3(room8).start();
-                Thread.sleep(100); 
+                new ConsoleApp3(room3).start();       
+                new ConsoleApp3(room4).start();       
+                new ConsoleApp3(room5).start();       
+                new ConsoleApp3(room6).start(); 
+                new ConsoleApp3(room7).start(); 
+                new ConsoleApp3(room8).start(); 
                 new ConsoleApp3(room9).start();
-                Thread.sleep(100);
-                new ConsoleApp3(room10).start();
-                Thread.sleep(100);              
+                new ConsoleApp3(room10).start();              
             }
         } else if(in.equals("get booking")) {
             input = in;

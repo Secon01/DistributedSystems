@@ -165,7 +165,7 @@ public class Master
             //System.out.println("Received get booking request...");
             handleGetBookRequest(input, output);
         } else if(requestLine.startsWith("GET /getAreaBooking")) {
-            System.out.println("Received get area booking request...");
+            //System.out.println("Received get area booking request...");
             handleAreaBookRequest(input, output);
         } else if(requestLine.startsWith("POST /giveReview")) {
             //System.out.println("Received get booking request...");
@@ -194,8 +194,8 @@ public class Master
     private void handleNewRoomRequest(BufferedReader in, OutputStream out) throws IOException {
         String jsonRoom = extractBody(in);                                              // extract json from request body
         Room room = deserializeRoom(jsonRoom);                                          // get room object from json
-        System.out.println("Received request: " + room.getId() + " is Thread: " + Thread.currentThread().threadId()
-                            + " with: " +  room.getRoomName() + "\n");
+        System.out.println("\n" + "Received request --> Thread: " + Thread.currentThread().threadId()
+                            + " with: " +  room.getRoomName());
         // Client side of master                                    
         int workerID = hashFunc(room.getRoomName(), workerConfig.nofWorkers);           // hash room name and get worker id to send request  
         int workerPort = getPort(workerID);                                             // get port of selected worker
@@ -216,10 +216,8 @@ public class Master
                                         (new InputStreamReader(socket.getInputStream()))) {
                 sendNewRoomRequest(output, jsonRoom);                                   // send request
                 // Read the response
-                String responseLine;
-                while ((responseLine = inputWorker.readLine()) != null) {
-                    System.out.println(responseLine);                                   // print response message
-                }
+                String responseLine = extractBody(inputWorker);
+                System.out.println(responseLine);                                   // print response message
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -274,9 +272,7 @@ public class Master
                 }
                 RoomResult results =  deserializeResults(responseBody);     // deserialize json with searching results
                 try {
-                    if(results != null) {
-                        reducer.reduce(results.getId(), results);               // reduce results with same id
-                    }
+                    reducer.reduce(results.getId(), results);               // reduce results with same id
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 } 
@@ -294,10 +290,10 @@ public class Master
             work.start();
             work.join();
         }
-        if(reducer.getResults().isEmpty()) {
+        if(reducer.isEmpty()) {
             try {
-                // Send response for succesfull http request
-                sendHttpResponse(out, 404, "Not Found", "{\"message\":\"Bookings not found\"}"
+                // Send response for unsuccesfull http request
+                sendHttpResponse(out, 404, "Not Found", "{\"message\":\"No such room\"}"
                 , "application/json");                  // send response for unsuccessful http request
             } catch (IOException e) {
                 e.printStackTrace();
@@ -318,6 +314,7 @@ public class Master
     {
         String jsonRoomName = extractBody(in);                                            // extract json with room name from request body
         String roomName = new Gson().fromJson(jsonRoomName, String.class);       // create string with room name from json
+        System.out.println("Received book for " + roomName);
         int workerID = hashFunc(roomName, workerConfig.nofWorkers);                     // hash room name and get worker id to send request  
         int workerPort = getPort(workerID);                                             // get port of selected worker
         Thread book  = new Thread(() -> {
@@ -339,12 +336,15 @@ public class Master
                 // Read the response
                 String responseLine;
                 while ((responseLine = inputWorker.readLine()) != null) {
-                    System.out.println(responseLine);                                       // print response message
                     if(responseLine.startsWith("HTTP/1.1 409 Conflict")) {
-                        sendHttpResponse(out, 409, "Conflict", "{\"message\":\"Room already booked\"}", 
+                        //System.out.println(responseLine);
+                        sendHttpResponse(out, 409, "Conflict", 
+                        "{\"message\":\" " + roomName +  " already booked\"}", 
                         "application/json");                                    // send response for unsuccessful http request            
                     } else if(responseLine.startsWith("HTTP/1.1 200 OK")) {
-                        sendHttpResponse(out, 200, "OK", "{\"message\":\"Room booked\"}",
+                        //System.out.println(responseLine);
+                        sendHttpResponse(out, 200, "OK", 
+                        "{\"message\":\" " + roomName + " booked\"}",
                         "application/json");                                    // send response for successful http request             
                     }
                 }
@@ -363,9 +363,7 @@ public class Master
 
     private void handleNewReviewRequest(BufferedReader in, OutputStream out) throws IOException, InterruptedException {
         String jsonReview = extractBody(in);                                            // extract json from request body
-        System.out.println(jsonReview);
-        Review review = new Gson().fromJson(jsonReview, Review.class);                              // create filter object from json 
-        //setRequestID(request, review);                                              // set a unique id to filter object                                      // convert filter object back to json
+        Review review = new Gson().fromJson(jsonReview, Review.class);         // create filter object from json 
         System.out.println("Received request: " + " with " + review.toString() + " is Thread: " + Thread.currentThread().threadId());
         final String json = jsonReview;     // make it final to work
         // Client side of master
@@ -463,9 +461,7 @@ public class Master
                 }
                 RoomResult results =  deserializeResults(responseBody);     // deserialize json with searching results
                 try {
-                    //if(!results.getRooms().isEmpty()) {
-                        reducer.reduce(results.getId(), results);               // reduce results with same id
-                    //}
+                    reducer.reduce(results.getId(), results);               // reduce results with same id
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -479,19 +475,16 @@ public class Master
                 } catch (IOException e) {
                     e.printStackTrace();
                 } 
-                //synchronized(reducer) {
-
-                //}                                                                               
             });
             work.start();                                                   // start thread
             work.join();                                                    // call external thread to wait for inside thread to finish
         }
-        System.out.println("ID: " + reducer.getCurrentID() + "\n" + reducer.getResults().size());
         if(reducer.isEmpty()) {
             try {
                 // Send response for succesfull http request
-                sendHttpResponse(out, 404, "Not Found", "{\"message\":\"Bookings not found\"}"
-                , "application/json");                  
+                sendHttpResponse(out, 404, "Not Found", 
+                                "{\"message\":\"Bookings for manager ID" +reducer.getCurrentID() + " not found\"}",
+                    "application/json");                  
             } catch (IOException e) {
                 e.printStackTrace();
             }                                                    
@@ -510,7 +503,6 @@ public class Master
     {
         Reducer reducer = new Reducer();                                            // create reducer object
         String jsonRoom = extractBody(in);                                          // extract json of room with given data range from http request body
-        //System.out.println(jsonRoom);
         Room room = deserializeRoom(jsonRoom);                                      // get room object from json 
         setRequestIDRoom(room, reducer);                                            // set unique ID to room and reducer object
         String jsonDataRange = serializeRoom(room);                                 // create json of room with given data range from room object
@@ -541,13 +533,10 @@ public class Master
                 String responseBody = null;                                         // body of http response 
                 try {
                     responseBody = extractBody(inputWorker);                        // extract json with results 
-                    //System.out.println(responseBody);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
                 RoomResult results =  deserializeResults(responseBody);     // deserialize json with searching results
-                //System.out.println("Request ID: " +  results.getId());
-                //results.printRooms();
                 try {
                     if(results != null) {
                         reducer.reduce(results.getId(), results);               // reduce results with same id
@@ -658,7 +647,7 @@ public class Master
 
     // Builds and sends the http response
     private static void sendHttpResponse(OutputStream out, int statusCode, String statusMessage, String body, String contentType) throws IOException {
-        String httpResponse = String.format("HTTP/1.1 %d %s\r\nContent-Type: %s\r\nContent-Length: %d\r\n%s", statusCode, statusMessage, 
+        String httpResponse = String.format("HTTP/1.1 %d %s\r\nContent-Type: %s\r\nContent-Length: %d\r\n\r\n%s", statusCode, statusMessage, 
                                             contentType, body.getBytes().length, body); // format of http header
         //System.out.println(httpResponse);   
         out.write(httpResponse.getBytes());

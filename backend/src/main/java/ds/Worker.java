@@ -170,6 +170,9 @@ public class Worker
                         if (valueF.equals(valueR)) {
                             result = true;          // properties are equal
                             //System.out.println("yes");
+                        } else {
+                            result = false;
+                            break;
                         }
                     } else if(valueF == null || valueR == null || valueF.equals(0) || valueR.equals(0) || 
                             valueF.equals(0.0) || valueR.equals(0.0)) {
@@ -199,8 +202,8 @@ public class Worker
                 results.setId(filter.getId());                      // set id of the selected room equal to filter's id        
             }
         } else {
-            System.out.println("No match!!");
-            return null;
+            results.setId(filter.getId());                      // set id of the selected room equal to filter's id                    
+            return results;
         }
         return results;
     }
@@ -268,7 +271,6 @@ public class Worker
                 results.setId(request.getId());                     // set id of the selected room equal to request's id        
             }
         } else {
-            System.out.println("No booking found!!");
             results.setId(request.getId());                     // set id of the selected room equal to request's id        
             return results;
         }
@@ -335,11 +337,8 @@ public class Worker
         Room room = deserializeRoom(jsonRoom);                                                              // create filter object from json input file
         System.out.println(room.toString() + "\n");
         addRoom(room);                                                                                      // add room to array
-        //System.out.println("Received filter data: " + jsonRoom);
-        //printRooms();
-        sendHttpResponse(out, 200, "OK", "{\"message\":\"New room added\"}",
+        sendHttpResponse(out, 200, "OK", "{\"message\":\" " +room.getRoomName() +" added\"}",
                              "application/json");                                               // send response for succesfull http request
-        //System.out.println("Room added...");
     }
     // Handles requests for searching a room
     private void handleSearchRoomRequest(BufferedReader in, OutputStream out) throws IOException, InterruptedException {
@@ -349,46 +348,41 @@ public class Worker
                         + filter.toString() + " is Thread: " + Thread.currentThread().threadId());
         RoomResult resultRooms = map(hasRoom(filter), filter);                                              // get array with results for reducer
         String jsonResults = serializeResults(resultRooms);                                                 // serialize results to json
-        //System.out.println("->->->" + jsonResults);
-        if (resultRooms != null) {                                         // if json with results is not null
+        if (!resultRooms.getRooms().isEmpty()) {                                                            // if json with results is not empty
             sendHttpResponse(out, 200, "OK", jsonResults
-            , "application/json");                                                              // send response for successful http request                        
+            , "application/json");                              // send response for successful http request                        
         } else {
             sendHttpResponse(out, 404, "Not Found", jsonResults
-            , "application/json");
-            //System.out.println("DEBUG");                                                                  // send response for unsuccessful http request
+            , "application/json");      // send response for unsuccessful http request
         }
     }
     // Handles requests for booking
     private void handleBookRoomRequest(BufferedReader in, OutputStream out) throws IOException {
         String jsonRoomName = extractBody(in);                                                                  // extract json with room name from request body
         String roomName = new Gson().fromJson(jsonRoomName, String.class);                             // create string with room name from json 
-        System.out.println(roomName + "\n");
+        System.out.println("Received request for booking: " + roomName + "\n");
         if(book(roomName)) {                                                                                    // book room by name and check if it is booked
-            sendHttpResponse(out, 200, "OK", "{\"message\":\"Room booked\"}",
-            "application/json");                                                                    // send response for successful http request 
+            sendHttpResponse(out, 200, "OK", 
+                            "{\"message\":\" " + roomName + " booked\"}",
+                "application/json");                                                                    // send response for successful http request 
         } else {
-            sendHttpResponse(out, 409, "Conflict", "{\"message\":\"Room already booked\"}", 
-            "application/json");                                                                    // send response for unsuccessful http request
+            sendHttpResponse(out, 409, "Conflict", 
+                            "{\"message\":\" " + roomName + " already booked\"}", 
+                "application/json");                                                                    // send response for unsuccessful http request
         }
-        //System.out.println("Room added...");
     }
     // Handles requests for given reviews
     private void handleNewReviewRequest(BufferedReader in, OutputStream out) throws IOException, InterruptedException {
         String jsonReview = extractBody(in);                                                                // extract json from request body
         Review review = deserializeReview(jsonReview);                                                  // create review object from json input file
-        System.out.println("Received request: " + review.getId() + " with " + review.toString());
+        System.out.println("Received rating request: " + review.toString());
         boolean done = giveReview(review);                                                                                  // get array with results for reducer
         if (done) { 
-            //System.out.println("->->->" + review);
             sendHttpResponse(out, 200, "OK", "{\"message\":\"Review added\"}"
                         , "application/json");                                              // send response for succesfull http request
-            //System.out.println(" Review added...");
-            //System.out.println("+-----------------------------+");
         }else{
             sendHttpResponse(out, 404, "Not Found", "{\"message\":\"No such room\"}", 
             "application/json"); 
-            //System.out.println("No such room as" + review.toString());
         }
     }    
     // Handles requests for getting bookings
@@ -399,17 +393,14 @@ public class Worker
         System.out.println("Received request: " + request.getId() + " is Thread: " + Thread.currentThread().threadId()
                             + " with: " + "\n" + "Manager ID: " + request.getManagerID());      // get manager ID from request object
         int managerID = request.getManagerID();                                                 // get manager ID from request object
-        //System.out.println(managerID);
         RoomResult bookings = resultBookings(isBooked(managerID), request);             // get array with bookings(booked rooms) for manager
         String jsonResults = serializeResults(bookings);                                // serialize results with bookings to json
-        System.out.println("->->->" + jsonResults);
         if (!bookings.getRooms().isEmpty()) {                                                         // if json with results is not null
             sendHttpResponse(out, 200, "OK", jsonResults
             , "application/json");                                          // send response for successful http request                        
         } else {
             sendHttpResponse(out, 404, "Not Found", jsonResults
             , "application/json");                                          // send response for unsuccessful http request
-            //System.out.println("DEBUG");                                              
         }
     }
     // Handles requests for getting bookings by area in given date range
@@ -422,14 +413,12 @@ public class Worker
         RoomResult bookings = resultBookings(isBookedDateRange(room.getDateRange()), room);
         //bookings.printRooms();
         String jsonResults = serializeResults(bookings);                                // serialize results with bookings to json
-        System.out.println(jsonResults);
         if (bookings != null) {                                                         // if json with results is not null
             sendHttpResponse(out, 200, "OK", jsonResults
             , "application/json");                                          // send response for successful http request                        
         } else {
             sendHttpResponse(out, 404, "Not Found", jsonResults
             , "application/json");                                          // send response for unsuccessful http request
-            //System.out.println("DEBUG");                                              
         }
     }
     // Sends error message when the server is incapable of performing the request
@@ -439,7 +428,7 @@ public class Worker
 
     // Builds and sends the http response
     private static void sendHttpResponse(OutputStream out, int statusCode, String statusMessage, String body, String contentType) throws IOException {
-        String httpResponse = String.format("HTTP/1.1 %d %s\r\nContent-Type: %s\r\nContent-Length: %d\r\n%s", statusCode, statusMessage, 
+        String httpResponse = String.format("HTTP/1.1 %d %s\r\nContent-Type: %s\r\nContent-Length: %d\r\n\r\n%s", statusCode, statusMessage, 
                                             contentType, body.getBytes().length, body);                     // format of http header
         //System.out.println(httpResponse);   
         out.write(httpResponse.getBytes());
