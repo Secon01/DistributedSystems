@@ -41,7 +41,7 @@ public class ConsoleApp3 extends Thread {
             .registerTypeAdapter(LocalDate.class, new LocalDateSerializer())
             .create();
         finalJSONString= gson.toJson(room);
-        System.out.println(finalJSONString);
+        //System.out.println(finalJSONString);
     }
     // Constructor for get bookings function
     ConsoleApp3(int managerID)
@@ -230,6 +230,7 @@ public class ConsoleApp3 extends Thread {
                 while ((responseLine = in.readLine()) != null) {
                     System.out.println(responseLine);
                 }
+                System.out.println();
             } else if(input.equals("get booking")) {               // check if input is equal to 'get booking'
                 reducers = new ArrayList<>();            // array list with reducer objects for printing
                 sendGetBookRequest(out);                                    // send request in order to get the bookings
@@ -291,8 +292,7 @@ public class ConsoleApp3 extends Thread {
             }
         } catch (IOException e) {
             e.printStackTrace();
-        } 
-        finally {
+        } finally {
             try {
                 socket.close();             // close socket
             } catch (IOException e) {
@@ -403,15 +403,25 @@ public class ConsoleApp3 extends Thread {
                         "Larisa", 200, "penthouse.jpg", "2024-04-10", "2024-04-16", true);         
                 input = in;
                 new ConsoleApp3(room1).start();
+                Thread.sleep(100);
                 new ConsoleApp3(room2).start();
-                new ConsoleApp3(room3).start();       
-                new ConsoleApp3(room4).start();       
-                new ConsoleApp3(room5).start();       
-                new ConsoleApp3(room6).start(); 
-                new ConsoleApp3(room7).start(); 
-                new ConsoleApp3(room8).start(); 
+                Thread.sleep(100);
+                new ConsoleApp3(room3).start();
+                Thread.sleep(100);       
+                new ConsoleApp3(room4).start();
+                Thread.sleep(100);       
+                new ConsoleApp3(room5).start();
+                Thread.sleep(100);       
+                new ConsoleApp3(room6).start();
+                Thread.sleep(100); 
+                new ConsoleApp3(room7).start();
+                Thread.sleep(100); 
+                new ConsoleApp3(room8).start();
+                Thread.sleep(100); 
                 new ConsoleApp3(room9).start();
-                new ConsoleApp3(room10).start();              
+                Thread.sleep(100);
+                new ConsoleApp3(room10).start();
+                Thread.sleep(100);              
             }
         } else if(in.equals("get booking")) {
             input = in;
@@ -423,7 +433,6 @@ public class ConsoleApp3 extends Thread {
                 for(Reducer r : reducers) {                   // for each reducer obejct in reducers arraylist
                     r.printRooms();                           // print results
                 }
-
             }
         } else if(in.equals("area booking")) {
             input = in;

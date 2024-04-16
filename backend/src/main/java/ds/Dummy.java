@@ -318,18 +318,19 @@ public class Dummy extends Thread {
       if(input .equals("search")) {
          // Search()
          ArrayList<Reducer> reducers = new ArrayList<>(); 
-         for(int i = 0; i < 4; i++) {
-            (new Dummy(null, "2024-04-06", "2024-04-07", 0, 0.0, 4)).start(); 
+         for(int i = 0; i < 1; i++) {
+            (new Dummy(null, "2024-04-06", "2024-04-07", 0, 0.0, 0)).start(); 
          }
          Thread.sleep(1000);
          Collections.sort(reducers);         // sort reducers array list based on current id
          for(Reducer reducer : reducers) {   // for each reducer obejct in reducers arraylist
             reducer.printRooms();            // print results        
-         } 
+         }  
       } else if (input.equals("book")){
          // Book()
-         for(int i = 0; i < 1; i++) {
+         for(int i = 0; i < 2; i++) {
             new Dummy("Double Room").start();
+            /* 
             new Dummy("Single Room").start();
             new Dummy("Family Room").start();
             new Dummy("Suite").start();
@@ -338,8 +339,9 @@ public class Dummy extends Thread {
             new Dummy("Economy Room").start();
             new Dummy("Penthouse").start();
             new Dummy("Standard Room").start();
-            new Dummy("Executive Suite").start(); 
-            Thread.sleep(1000);  
+            new Dummy("Executive Suite").start();
+            */ 
+            //Thread.sleep(1000);  
          }         
       } else if(input.equals("review")) {
             new Dummy(4.2,"Single Room").start();

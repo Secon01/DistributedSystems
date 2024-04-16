@@ -162,11 +162,14 @@ public class Worker
                     fieldR.setAccessible(true);
                     Object valueF = fieldF.get(filter);
                     Object valueR = fieldR.get(room);
+                    //System.out.println("FILTER: " + valueF);
+                    //System.out.println("ROOM: " + valueR);
                     // Both values are not null or 0, compare them
                     if (valueF != null && valueR != null && !valueF.equals(0) && !valueR.equals(0) && 
                         !valueF.equals(0.0) && !valueR.equals(0.0)) {
                         if (valueF.equals(valueR)) {
                             result = true;          // properties are equal
+                            //System.out.println("yes");
                         }
                     } else if(valueF == null || valueR == null || valueF.equals(0) || valueR.equals(0) || 
                             valueF.equals(0.0) || valueR.equals(0.0)) {
@@ -266,7 +269,8 @@ public class Worker
             }
         } else {
             System.out.println("No booking found!!");
-            return null;
+            results.setId(request.getId());                     // set id of the selected room equal to request's id        
+            return results;
         }
         return results;
     }
@@ -307,7 +311,7 @@ public class Worker
             //System.out.println("Received search room request...");
             handleSearchRoomRequest(input, output);
         } else if(requestLine.startsWith("POST /bookRoom")) {
-            System.out.println("Received book room request...");
+            //System.out.println("Received book room request...");
             handleBookRoomRequest(input, output);
         } else if(requestLine.startsWith("GET /getBooking")) {
             //System.out.println("Received get booking request...");
@@ -399,7 +403,7 @@ public class Worker
         RoomResult bookings = resultBookings(isBooked(managerID), request);             // get array with bookings(booked rooms) for manager
         String jsonResults = serializeResults(bookings);                                // serialize results with bookings to json
         System.out.println("->->->" + jsonResults);
-        if (bookings != null) {                                                         // if json with results is not null
+        if (!bookings.getRooms().isEmpty()) {                                                         // if json with results is not null
             sendHttpResponse(out, 200, "OK", jsonResults
             , "application/json");                                          // send response for successful http request                        
         } else {
@@ -428,7 +432,6 @@ public class Worker
             //System.out.println("DEBUG");                                              
         }
     }
-
     // Sends error message when the server is incapable of performing the request
     private static void sendNotImplementedResponse(OutputStream out) throws IOException {
         sendHttpResponse(out, 501, "Not Implemented", "", "text/plain");
@@ -436,7 +439,7 @@ public class Worker
 
     // Builds and sends the http response
     private static void sendHttpResponse(OutputStream out, int statusCode, String statusMessage, String body, String contentType) throws IOException {
-        String httpResponse = String.format("HTTP/1.1 %d %s\r\nContent-Type: %s\r\nContent-Length: %d\r\n\r\n%s", statusCode, statusMessage, 
+        String httpResponse = String.format("HTTP/1.1 %d %s\r\nContent-Type: %s\r\nContent-Length: %d\r\n%s", statusCode, statusMessage, 
                                             contentType, body.getBytes().length, body);                     // format of http header
         //System.out.println(httpResponse);   
         out.write(httpResponse.getBytes());

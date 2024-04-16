@@ -149,7 +149,7 @@ public class Master
 
         String requestLine = input.readLine();                                                          // set request line 
         if (requestLine == null || requestLine.isEmpty()) {
-            Thread.interrupted();       // kill thread running
+            return;       // kill thread running
         }
         // Header check
         if (requestLine.startsWith("POST /newRoom")) {               
@@ -195,7 +195,7 @@ public class Master
         String jsonRoom = extractBody(in);                                              // extract json from request body
         Room room = deserializeRoom(jsonRoom);                                          // get room object from json
         System.out.println("Received request: " + room.getId() + " is Thread: " + Thread.currentThread().threadId()
-                            + " with: " + "\n" + room.toString());
+                            + " with: " +  room.getRoomName() + "\n");
         // Client side of master                                    
         int workerID = hashFunc(room.getRoomName(), workerConfig.nofWorkers);           // hash room name and get worker id to send request  
         int workerPort = getPort(workerID);                                             // get port of selected worker
@@ -230,7 +230,7 @@ public class Master
             }                                                                           // close socket
         }).start();   
         sendHttpResponse(out, 200, "OK",                        // send response for succesfull http request
-        "{\"message\":\"New room added\"}"
+        "{\"message\":\" " + room.getRoomName() + " added\"}"
            , "application/json");                          
     }
     // Handles requests for searching room
@@ -299,7 +299,6 @@ public class Master
                 // Send response for succesfull http request
                 sendHttpResponse(out, 404, "Not Found", "{\"message\":\"Bookings not found\"}"
                 , "application/json");                  // send response for unsuccessful http request
-                return;
             } catch (IOException e) {
                 e.printStackTrace();
             }                                                    
@@ -464,9 +463,9 @@ public class Master
                 }
                 RoomResult results =  deserializeResults(responseBody);     // deserialize json with searching results
                 try {
-                    if(results != null) {
+                    //if(!results.getRooms().isEmpty()) {
                         reducer.reduce(results.getId(), results);               // reduce results with same id
-                    }
+                    //}
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -487,12 +486,12 @@ public class Master
             work.start();                                                   // start thread
             work.join();                                                    // call external thread to wait for inside thread to finish
         }
-        if(reducer.getResults().isEmpty()) {
+        System.out.println("ID: " + reducer.getCurrentID() + "\n" + reducer.getResults().size());
+        if(reducer.isEmpty()) {
             try {
                 // Send response for succesfull http request
                 sendHttpResponse(out, 404, "Not Found", "{\"message\":\"Bookings not found\"}"
                 , "application/json");                  
-                return;
             } catch (IOException e) {
                 e.printStackTrace();
             }                                                    
@@ -659,7 +658,7 @@ public class Master
 
     // Builds and sends the http response
     private static void sendHttpResponse(OutputStream out, int statusCode, String statusMessage, String body, String contentType) throws IOException {
-        String httpResponse = String.format("HTTP/1.1 %d %s\r\nContent-Type: %s\r\nContent-Length: %d\r\n\r\n%s", statusCode, statusMessage, 
+        String httpResponse = String.format("HTTP/1.1 %d %s\r\nContent-Type: %s\r\nContent-Length: %d\r\n%s", statusCode, statusMessage, 
                                             contentType, body.getBytes().length, body); // format of http header
         //System.out.println(httpResponse);   
         out.write(httpResponse.getBytes());
@@ -724,7 +723,7 @@ public class Master
         //    return;
         //}
         //System.out.println(workerConfig.toString()); 
-        String filepath = JsonUtils.readFileToString("C:/Users/sotir/DS/DistributedSystems/workers.json"); // read file from args and convert it to string
+        String filepath = JsonUtils.readFileToString("/home/secon/Documents/GitHub/DistributedSystems/workers.json"); // read file from args and convert it to string
         Gson gson = new Gson();
         workerConfig = gson.fromJson(filepath, WorkerConfig.class);    // create worker config object from json
         new Master();

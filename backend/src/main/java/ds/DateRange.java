@@ -35,8 +35,8 @@ public class DateRange
     // Checks if one date range object is within the range of this date range object
     public boolean isWithinRange(DateRange other) 
     {
-        return (this.startDate.isAfter(other.startDate) || this.startDate.isEqual(startDate)) && 
-                (this.endDate.isBefore(other.endDate) ||this.endDate.isEqual(other.endDate));
+        return (this.startDate.isAfter(other.startDate) || this.startDate.isEqual(other.startDate)) && 
+                (this.endDate.isBefore(other.endDate) || this.endDate.isEqual(other.endDate));
     }
 
     // Override equals method to compare if a given data range object 
@@ -44,9 +44,9 @@ public class DateRange
     @Override
     public boolean equals(Object obj)
     {
-        if(this == obj) {                                           // if two objects are the same 
-            return true;
-        }
+        //if(this == obj) {                                           // if two objects are the same 
+        //    return true;
+        //}
         if (obj == null || DateRange.class != obj.getClass()) {     // if given obj is null or its class isn't DataRange 
             return false;
         }
@@ -77,15 +77,15 @@ public class DateRange
         sc.close();
         */
 
-        DateRange dr = new DateRange();
-        dr.setStartDate("2024-04-02");
-        dr.setEndDate("2024-04-08");
+        DateRange filter = new DateRange();
+        filter.setStartDate("2024-04-03");
+        filter.setEndDate("2024-04-06");
 
-        DateRange dr2 = new DateRange();
-        dr2.setStartDate("2024-04-02");
-        dr2.setEndDate("2024-04-07");
+        DateRange room = new DateRange();
+        room.setStartDate("2024-04-02");
+        room.setEndDate("2024-04-07");
 
-        System.out.println(dr2.isWithinRange(dr));
-        System.out.println(dr2.equals(dr));
+        System.out.println(filter.isWithinRange(room));
+        System.out.println(filter.equals(room));
     }
 }

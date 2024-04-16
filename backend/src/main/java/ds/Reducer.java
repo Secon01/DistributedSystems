@@ -33,6 +33,17 @@ public class Reducer implements Comparable<Reducer>
         }    
     }
 
+    public boolean isEmpty()
+    {
+        boolean empty = true;
+        for(RoomResult result : results) {
+            if(!result.getRooms().isEmpty()) {
+                empty = false;
+            }
+        }
+        return empty;
+    }
+
     // Prints request id and rooms of results arraylist
     public void printRooms() throws InterruptedException
     {
