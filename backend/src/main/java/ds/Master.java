@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import ds.JsonConverter.JsonUtils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-// Hey
+
 public class Master
 {
     public static WorkerConfig workerConfig;        // workers configuration instance
