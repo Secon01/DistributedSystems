@@ -24,11 +24,13 @@ public class Dummy extends Thread {
    private static int port = 8000;
    static String[] inputArgs;
    public static String input;
-   private String roomName;                           // room name for booking
-   private Review review;
+   private String roomName;                                 // room name for booking
+   private String roomNameReview;
+   private Review review;                                   // review object that we are going to send
    private String regex = "\\d{4}-\\d{2}-\\d{2}";           // regular expression to match the format YYYY-MM-DD
    private static ArrayList<Reducer> reducers;
 
+   // Constructor in case of sending a Filter object in a search request
    Dummy(String area, String startDate, String endDate, int guests, double price, int stars) {
       this.filter = new Filter();
       this.filter.setArea(area);
@@ -39,29 +41,29 @@ public class Dummy extends Thread {
       this.filter.setPrice(price);
       this.filter.setStars(stars);
    }
-
+   // Constuctor in case of sending a room in a book request
    Dummy(String roomName)
    {
       this.roomName = roomName;
    }
-
-   Dummy(double stars, String roomName)
+   // Constructor in case of sending a Review object in a rate review
+   Dummy(double stars, String roomNameReview)
    {
-      review = new Review(stars, roomName);
+      review = new Review(stars, roomNameReview);
    }
-
+   // Default constructor in case we want to send a Filter object with a menu
    Dummy() throws InterruptedException 
    {
       this.filter = new Filter();
       //runMenu();
    }
-
+   // Print the Header of the menu
    public void header() {
       System.out.println("+----------------------------+");
       System.out.println("|   Welcome to Housebooking  |");
       System.out.println("+----------------------------+");
    }
-
+   // Print the menu of choice when called
    public void menu() {
       System.out.println();
       System.out.println("Please select a number and press enter to proceed. If you want to exit press 0 and enter to proceed.");
@@ -72,9 +74,10 @@ public class Dummy extends Thread {
       System.out.println(" 5) Number of stars");
       System.out.println(" 6) Search");
       System.out.println(" 7) Book");
+      System.out.println(" 8) Rate");      
       System.out.println(" 0) Exit");
    }
-
+   // Run the menu 
    public void runMenu() throws InterruptedException {
       this.header();
       while(!this.exit) {
@@ -83,22 +86,22 @@ public class Dummy extends Thread {
          this.performAction(choice);
       }
    }
-
+   // Get the choice and check if is eligible to continue 
    public int getInput() {
       this.sc = new Scanner(System.in);
       int choice = -1;
 
-      while(choice < 0 || choice > 7) {
+      while(choice < 0 || choice > 8) {
          try {
             System.out.println("Enter your selection: ");
-            choice = Integer.parseInt(this.sc.nextLine());
+            choice = Integer.parseInt(this.sc.nextLine());                        
          } catch (NumberFormatException var3) {
             System.out.println("Invalid selection! Please try again.");
          }
       }
       return choice;
    }
-
+   // Perform the actions needed based on the user choice
    public void performAction(int choice) throws InterruptedException {
       switch (choice) {
          case 0:
@@ -116,7 +119,7 @@ public class Dummy extends Thread {
             while(true) {
                Scanner start = new Scanner(System.in);
                startDate = start.nextLine();    
-               if (Pattern.matches(regex, startDate)) {    // check if regular expression of date format matches user's input
+               if (Pattern.matches(regex, startDate)) {          // check if regular expression of date format matches user's input
                   break;
                } else {
                   System.out.println("Invalid date format. Please enter date in YYYY-MM-DD format!");
@@ -126,7 +129,7 @@ public class Dummy extends Thread {
             while (true) {
                Scanner end = new Scanner(System.in);
                String endDate = end.nextLine();                            
-               if (Pattern.matches(regex, endDate)) {      // check if regular expression of date format matches user's input
+               if (Pattern.matches(regex, endDate)) {            // check if regular expression of date format matches user's input
                   this.filter.setDate(startDate, endDate);
                   break;
                } else {
@@ -136,26 +139,33 @@ public class Dummy extends Thread {
             break;
          case 3:
             System.out.println("Enter a number of guests");
-            this.filter.setGuests(Integer.parseInt(this.sc.nextLine()));
+            this.filter.setGuests(Integer.parseInt(this.sc.nextLine()));      // get input and parse it to make it the right type
             break;
          case 4:
             System.out.println("Enter a price");
-            this.filter.setPrice(Double.parseDouble(this.sc.nextLine()));
+            this.filter.setPrice(Double.parseDouble(this.sc.nextLine()));     // get input and parse it to make it the right type           
             break;
          case 5:
             System.out.println("Enter a number of stars");
-            this.filter.setStars(Integer.parseInt(this.sc.nextLine()));
+            this.filter.setStars(Integer.parseInt(this.sc.nextLine()));       // get input and parse it to make it the right type         
          case 6:
-            input = "search";
-            search();
+            input = "search";   
+            search();                                                          // run via search () 
             break;
          case 7:
             Scanner rn = new Scanner(System.in);
             System.out.println("Type the name of the room you wish to book");
-            roomName = rn.nextLine();
-            input = "book";
-            book();         
+            roomName = rn.nextLine();                                          // get the roomName
+            input = "book";                  
+            book();                                                            // run via book()
             break;
+         case 8:
+            Scanner rn = new Scanner(System.in);
+            System.out.println("Type the name of the room you wish to rate");
+            roomNameReview = rn.nextLine();
+            input = "rate"
+            rate();
+            break ; 
          default:
             System.out.println("An unknown error has occured!");
       }
@@ -172,13 +182,16 @@ public class Dummy extends Thread {
          reducer.printRooms();                           // print results
       }
    }
-
    // Sends request for booking a room
    private void book()
    {
       this.run();
    }
-
+   // Sends request for rating a room
+   private void rate()
+   {
+      this.run();
+   }
    // Serializes filter object to json 
    private String serializeFilter(Filter filter)
    {
@@ -201,18 +214,18 @@ public class Dummy extends Thread {
    {
       Socket socket = null;
       try {
-         socket = new Socket(hostname, port);
+         socket = new Socket(hostname, port);                          //open connection to Master
       } catch (IOException e) {
          e.printStackTrace();
       }
       try (PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
          BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
-      if (input.equals("search")) {                      // check if input is equal to 'search' 
-         reducers = new ArrayList<>();         // array list with reducer objects for printing
-         sendSearchRoomRequest(out);                              // send request for searching a room
-         String json = extractBody(in);                           // extract json from http request body
-         if(json.startsWith("{\"message\"")) {             // if json string is null 
-            System.out.println(json);     
+      if (input.equals("search")) {                                    // check if input is equal to 'search' 
+         reducers = new ArrayList<>();                                 // array list with reducer objects for printing
+         sendSearchRoomRequest(out);                                   // send request for searching a room
+         String json = extractBody(in);                                // extract json from http request body
+         if(json.startsWith("{\"message\"")) {                         // if json string is null 
+            System.out.println(json);                                  // print the appropriate message 
             return;
          } else {
             Reducer reducer = deserializeReducer(json);              // create reducer object from json  
@@ -220,27 +233,25 @@ public class Dummy extends Thread {
                reducers.add(reducer);                                // add reducer objects with results in reducers array
             }   
          }
-      }  else if(input.equals("book")) {                 // check if input is equal to 'search'
-         sendBookRoomRequest(out);                                // send request for booking a room
-         // Read the response
-         String responseBody = extractBody(in);
-         System.out.println("\n" + responseBody);
-      } else if(input.equals("rate")) {       // check if input is equal to 'search'
-         sendNewReviewRequest(out);                         // send request for booking a room
-         // Read the response
-         String responseBody = extractBody(in);
+      }  else if(input.equals("book")) {                             // check if input is equal to 'book'
+         sendBookRoomRequest(out);                                   // send request for booking a room
+         String responseBody = extractBody(in);                      // read response
+         System.out.println("\n" + responseBody);                     
+      } else if(input.equals("rate")) {                              // check if input is equal to 'rate'
+         sendNewReviewRequest(out);                                  // send request for rating a room
+         String responseBody = extractBody(in);                      // read response
          System.out.println("\n" + responseBody);
       }
       else {
-         System.out.println("Unknown command. Use 'getRoom' or 'newRoom'.");
-         sc.close();                                  // close scanner
-         return;
+         System.out.println("Unknown command. Use 'search' or 'book' or 'rate'.");
+         sc.close();                                                // close scanner
+         return;                                                    
       }
       } catch (IOException e) {
          e.printStackTrace();
       } finally {
          try {
-            socket.close();             // close socket
+            socket.close();                                          // close socket
          } catch (IOException e) {
                e.printStackTrace();
          }
@@ -266,7 +277,7 @@ public class Dummy extends Thread {
       }
       return requestBody.toString();
    }
-
+   // Send search request to Master
    private void sendSearchRoomRequest(PrintWriter out) {
       String jsonBody = serializeFilter(this.filter);
       out.println("POST /searchRoom HTTP/1.1");
@@ -277,7 +288,7 @@ public class Dummy extends Thread {
       out.println();
       out.println(jsonBody);
    }
-
+   // Send book request to Master
    private void sendBookRoomRequest(PrintWriter out) {
       String jsonBody = new Gson().toJson(roomName);
       out.println("POST /bookRoom HTTP/1.1");
@@ -288,10 +299,9 @@ public class Dummy extends Thread {
       out.println();
       out.println(jsonBody);
    }
-
+   // Send rate request to Master
    private void sendNewReviewRequest(PrintWriter out) {
       String jsonBody = new Gson().toJson(this.review);
-      //System.out.println(jsonBody);
       out.println("POST /giveReview HTTP/1.1");
       out.println("Host: localhost");
       out.println("Content-Type: application/json");
