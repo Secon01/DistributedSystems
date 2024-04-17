@@ -8,9 +8,10 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import ds.JsonConverter.JsonUtils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -684,6 +685,12 @@ public class Master
         return requestBody.toString();
     }
 
+    public static String readFileToString(String filePath) throws IOException 
+    {
+        return new String(Files.readAllBytes(Paths.get(filePath)));
+    }
+
+
     // Inner class worker
     private class Worker
     {
@@ -716,7 +723,7 @@ public class Master
         //    return;
         //}
         //System.out.println(workerConfig.toString()); 
-        String filepath = JsonUtils.readFileToString("/home/secon/Documents/GitHub/DistributedSystems/workers.json"); // read file from args and convert it to string
+        String filepath = readFileToString("/home/secon/Documents/GitHub/DistributedSystems/workers.json"); // read file from args and convert it to string
         Gson gson = new Gson();
         workerConfig = gson.fromJson(filepath, WorkerConfig.class);    // create worker config object from json
         new Master();
