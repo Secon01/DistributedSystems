@@ -43,7 +43,6 @@ public class Master
     private synchronized int getUniqueNumber() {
         return requestID++;                                           
     }
-
     // Sets unique id to each request with filter and to reducer's id
     private void setRequestIDFilter(Filter filter, Reducer reducer)
     {
@@ -52,7 +51,6 @@ public class Master
             reducer.setCurrentID(filter.getId());
         //}
     }
-
     // Sets unique id to each request with room and to reducer's id
     private void setRequestIDRoom(Room room, Reducer reducer)
     {
