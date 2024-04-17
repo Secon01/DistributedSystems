@@ -163,7 +163,7 @@ public class Dummy extends Thread {
             Scanner rn2 = new Scanner(System.in);
             System.out.println("Type the name of the room you wish to rate");
             roomNameReview = rn2.nextLine();
-            input = "rate"
+            input = "rate";
             rate();
             break ; 
          default:
