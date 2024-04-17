@@ -12,6 +12,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Scanner;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -723,9 +725,12 @@ public class Master
         //    return;
         //}
         //System.out.println(workerConfig.toString()); 
-        String filepath = readFileToString("/home/secon/Documents/GitHub/DistributedSystems/workers.json"); // read file from args and convert it to string
+        Scanner scan = new Scanner(System.in);
+        System.out.println("Enter path of configuration file 'workers'");
+        String filepath = readFileToString(scan.nextLine()); // read file from input and convert it to string
         Gson gson = new Gson();
         workerConfig = gson.fromJson(filepath, WorkerConfig.class);    // create worker config object from json
         new Master();
+        scan.close();
     }
 }
