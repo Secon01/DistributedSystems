@@ -157,7 +157,7 @@ public class Master
             //System.out.println("Received search room request...");
             handleSearchRoomRequest(input, output);
         } else if(requestLine.startsWith("POST /bookRoom")) {
-            System.out.println("Received book room request...");
+            //System.out.println("Received book room request...");
             handleBookRoomRequest(input, output);
         } else if(requestLine.startsWith("GET /getBooking")) {
             //System.out.println("Received get booking request...");
@@ -192,7 +192,7 @@ public class Master
     private void handleNewRoomRequest(BufferedReader in, OutputStream out) throws IOException {
         String jsonRoom = extractBody(in);                                              // extract json from request body
         Room room = deserializeRoom(jsonRoom);                                          // get room object from json
-        System.out.println("\n" + "Received request for adding room:" 
+        System.out.println("\n" + "Received request for adding room: " 
                                 +  room.getRoomName()  
                                 + ", Thread: " + Thread.currentThread().threadId());
         // Client side of master                                    

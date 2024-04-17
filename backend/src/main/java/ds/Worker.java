@@ -162,14 +162,18 @@ public class Worker
                     fieldR.setAccessible(true);
                     Object valueF = fieldF.get(filter);
                     Object valueR = fieldR.get(room);
-                    //System.out.println("FILTER: " + valueF);
-                    //System.out.println("ROOM: " + valueR);
+                    System.out.println("FILTER: " + valueF);
+                    System.out.println("ROOM: " + valueR);
+                    if(valueF.getClass() == DateRange.class) {
+                        if(((DateRange) valueF).getStartDate() == null || ((DateRange) valueF).getEndDate() == null) {
+                            continue;
+                        }
+                    }
                     // Both values are not null or 0, compare them
                     if (valueF != null && valueR != null && !valueF.equals(0) && !valueR.equals(0) && 
                         !valueF.equals(0.0) && !valueR.equals(0.0)) {
                         if (valueF.equals(valueR)) {
                             result = true;          // properties are equal
-                            //System.out.println("yes");
                         } else {
                             result = false;
                             break;
@@ -182,6 +186,7 @@ public class Worker
                     e.printStackTrace();
                 }
             }
+            System.out.println("Result is:" + result);
             if(result) {
                 indexes.add(rooms.indexOf(room));       // add index of iterated room to array
             } 
@@ -344,9 +349,9 @@ public class Worker
     private void handleSearchRoomRequest(BufferedReader in, OutputStream out) throws IOException, InterruptedException {
         String jsonFilter = extractBody(in);                                                                // extract json from request body
         Filter filter = deserializeFilter(jsonFilter);                                                      // create filter object from json input file
-        System.out.println("Received request: " + filter.getId() + " with " 
-                        + filter.toString() + " is Thread: " 
-                        + Thread.currentThread().threadId() + "\n");
+        System.out.println("\n" + "Received request "+ filter.getId() + " with filter: \n" 
+                                +  filter.toString()  
+                                + ", Thread: " + Thread.currentThread().threadId());
         RoomResult resultRooms = map(hasRoom(filter), filter);                                              // get array with results for reducer
         String jsonResults = serializeResults(resultRooms);                                                 // serialize results to json
         if (!resultRooms.getRooms().isEmpty()) {                                                            // if json with results is not empty

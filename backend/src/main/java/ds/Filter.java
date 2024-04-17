@@ -18,8 +18,7 @@ public class Filter extends Request
         this.guests = 0;
         this.price = 0.0;
         this.stars = 0;
-    }
-
+    }    
     // Setters for filter attributes
     public void setArea(String a)
     {

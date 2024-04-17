@@ -32,11 +32,12 @@ public class Dummy extends Thread {
    Dummy(String area, String startDate, String endDate, int guests, double price, int stars) {
       this.filter = new Filter();
       this.filter.setArea(area);
-      this.filter.setDate(startDate, endDate);
+      if(startDate != null && endDate != null) {
+         this.filter.setDate(startDate, endDate);
+      }
       this.filter.setGuests(guests);
       this.filter.setPrice(price);
       this.filter.setStars(stars);
-      System.out.println(filter.toString());
    }
 
    Dummy(String roomName)
@@ -223,12 +224,12 @@ public class Dummy extends Thread {
          sendBookRoomRequest(out);                                // send request for booking a room
          // Read the response
          String responseBody = extractBody(in);
-         System.out.println(responseBody);
+         System.out.println("\n" + responseBody);
       } else if(input.equals("rate")) {       // check if input is equal to 'search'
          sendNewReviewRequest(out);                         // send request for booking a room
          // Read the response
          String responseBody = extractBody(in);
-         System.out.println(responseBody);
+         System.out.println("\n" + responseBody);
       }
       else {
          System.out.println("Unknown command. Use 'getRoom' or 'newRoom'.");
@@ -302,12 +303,12 @@ public class Dummy extends Thread {
    public static void main(String[] args) throws IOException, InterruptedException {
       //new Dummy().start(); 
       sc = new Scanner(System.in);
-      System.out.println("Give input, [search, book, rate]");
+      System.out.println("Give input: [search, book, rate]");
       input = sc.nextLine();
       sc.close();
       if(input .equals("search")) {  // Search()
-         for(int i = 0; i < 3; i++) {
-            (new Dummy(null, "2024-04-06", "2024-04-07", 0, 0.0, 0)).start(); 
+         for(int i = 0; i < 1; i++) {
+            (new Dummy("Crete", "2024-04-06", "2024-04-12", 0, 0.0, 0)).start(); 
          }
          Thread.sleep(1000);
          Collections.sort(reducers);         // sort reducers array list based on current id
