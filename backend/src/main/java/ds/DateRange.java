@@ -16,31 +16,21 @@ public class DateRange
     {
         return endDate;
     }
-
     //Setters
     public void setStartDate(String startDate)                      // set the starting date
     {
         this.startDate = LocalDate.parse(startDate);                // parse a given string to local date object
     }
-
     public void setEndDate(String endDate)                          // set the ending date
     {
         this.endDate = LocalDate.parse(endDate);                    // parse a given string to local date object
     }
-
-    // Checks if the given local date object is in range of this date range object
-    public boolean isInRange(LocalDate date) 
-    {
-        return !date.isBefore(startDate) && !date.isAfter(endDate);          
-    }
-
     // Checks if one date range object is within the range of this date range object
     public boolean isWithinRange(DateRange other) 
     {
         return (this.startDate.isAfter(other.startDate) || this.startDate.isEqual(other.startDate)) && 
                 (this.endDate.isBefore(other.endDate) || this.endDate.isEqual(other.endDate));
     }
-
     // Override equals method to compare if a given data range object 
     // is within the range of this data range object
     @Override
@@ -58,7 +48,6 @@ public class DateRange
         DateRange other = (DateRange) obj;                                 // cast given object to data range object
         return this.isWithinRange(other);                                  // return boolean value of isWithinRange method
     }
-
     // Give the DateRange object's properties as a string
     public String toString()
     {                                            

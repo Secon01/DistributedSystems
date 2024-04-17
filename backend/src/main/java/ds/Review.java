@@ -6,11 +6,10 @@ public class Review extends Request {
     private double reviewStars;
     private String roomForReview;
 
-    // default Constructor
-    Review(){
-
+    // Default Constructor
+    Review()
+    {
     }
-    
     // Constructor
     Review(double rev, String room){
         this.reviewStars=rev;
@@ -24,17 +23,14 @@ public class Review extends Request {
     public void setRoomForReview(String ro){
         this.roomForReview = ro ;
     }
-
     // Getters 
     public double getReview(){
         return reviewStars ;
     }
-
     public String getRoomForReview(){
         return roomForReview ;
     }
-    
-    // Checks the count of properties that are non null/0/0.0
+    //  Computes how many non null or non 0 values does this object has
     public int numNonZero() {
         int count = 0;
         Field[] fields = this.getClass().getDeclaredFields();
@@ -51,6 +47,7 @@ public class Review extends Request {
         }
         return count;
     }
+    // Prints Review obj's properties as a String
     public String toString()
     {
         return "[" + this.reviewStars + ", " + this.roomForReview + "]";
