@@ -1,9 +1,9 @@
 package ds;
 
+import com.google.gson.Gson;
 import java.lang.reflect.Field;
 import java.util.UUID;
 
-import com.google.gson.Gson;
 
 // Room Class
 public class Room extends Request
