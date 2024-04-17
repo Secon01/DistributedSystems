@@ -22,7 +22,7 @@ public class RoomResult
         return rooms;
     }
 
-    // Setters
+    // Setter
     public void setId(int id) {
         this.id = id;
     }
