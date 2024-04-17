@@ -25,7 +25,7 @@ public class Filter extends Request
     }
     public void setDate(String start, String end)
     {
-        this.dateRange.setStartDate(start);      // set end date of date range 
+        this.dateRange.setStartDate(start);      // set start date of date range 
         this.dateRange.setEndDate(end);          // set end date of date range 
     }
     public void setGuests(int g)
