@@ -160,9 +160,9 @@ public class Dummy extends Thread {
             book();                                                            // run via book()
             break;
          case 8:
-            Scanner rn = new Scanner(System.in);
+            Scanner rn2 = new Scanner(System.in);
             System.out.println("Type the name of the room you wish to rate");
-            roomNameReview = rn.nextLine();
+            roomNameReview = rn2.nextLine();
             input = "rate"
             rate();
             break ; 
