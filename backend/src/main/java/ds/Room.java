@@ -64,43 +64,33 @@ public class Room extends Request
     public DateRange getDateRange() {
         return dateRange;
     }
-
     public String getRoomName() {
         return roomName;
     }
-
     public int getGuests() {
         return guests;
     }
-
     public double getPrice() {
         return price;
     }
-
     public double getStars() {
         return stars;
     }
-
     public String getArea() {
         return area;
     }
-
     public int getReviews() {
         return reviews;
     }
-
     public String getRoomImage() {
         return roomImage;
     }
-
     public String getEndDate() {
         return endDate;
     }
-
     public String getStartDate() {
         return startDate;
     }
-
     public boolean getAvailable()
     {
         return available;
@@ -110,43 +100,33 @@ public class Room extends Request
     public void setRoomName(String roomName) {
         this.roomName = roomName;
     }
-
     public void setGuests(int guestNum) {
         this.guests = guestNum;
     }
-
     public void setPrice(double price) {
         this.price = price;
     }
-
     public void setStars(double stars) {
         this.stars = stars;
     }
-
     public void setArea(String area) {
         this.area = area;
     }
-
     public void setReviews(int reviews) {
         this.reviews = reviews;
     }
-
     public void setRoomImage(String roomImage) {
         this.roomImage = roomImage;
     }
-
     public void setStartDate(String StartDate) {
         this.startDate = StartDate;
     }
-
     public void setEndDate(String EndDate) {
         this.endDate = EndDate;
     }
-    
     public void setAvailable(boolean available) {
         this.available = available;
     }
-
     public void setDateRange(String startDate, String endDate) {
         this.dateRange = new DateRange();
         this.dateRange.setStartDate(startDate);
