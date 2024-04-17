@@ -15,7 +15,7 @@ import org.eclipse.collections.impl.factory.Bags;
 import java.io.*;
 import java.net.Socket;
 
-public class ConsoleApp3 extends Thread {
+public class ConsoleApp extends Thread {
     private Scanner value1;
     private Scanner value2;
     private Scanner inp;
@@ -30,7 +30,7 @@ public class ConsoleApp3 extends Thread {
     private static String input;
     private static ArrayList<Reducer> reducers;
     // Constructor for add room function 
-    ConsoleApp3(Room room) throws IOException
+    ConsoleApp(Room room) throws IOException
     {
         Gson gson = new GsonBuilder()
             .registerTypeAdapter(LocalDate.class, new LocalDateSerializer())
@@ -39,18 +39,18 @@ public class ConsoleApp3 extends Thread {
         //System.out.println(finalJSONString);
     }
     // Constructor for get bookings function
-    ConsoleApp3(int managerID)
+    ConsoleApp(int managerID)
     {
         this.managerID = managerID;
     }
     // Constructor for get bookings by area function
-    ConsoleApp3(String start , String end)
+    ConsoleApp(String start , String end)
     {
         this.room = new Room();                 // initialize room instance
         this.room.setDateRange(start, end);     // set starting and ending date of room        
     }
     // Default constructor for running menu
-    ConsoleApp3() throws InterruptedException
+    ConsoleApp() throws InterruptedException
     {
         runMenu();
     }
@@ -349,7 +349,7 @@ public class ConsoleApp3 extends Thread {
         out.println(jsonBody);
     }
     public static void main(String[] args) throws IOException, InterruptedException {
-        new ConsoleApp3().start();
+        new ConsoleApp().start();
         /* 
         Scanner sc = new Scanner(System.in);
         System.out.println("Give input");
