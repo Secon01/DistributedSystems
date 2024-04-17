@@ -348,7 +348,7 @@ public class Worker
     private void handleSearchRoomRequest(BufferedReader in, OutputStream out) throws IOException, InterruptedException {
         String jsonFilter = extractBody(in);                                                                // extract json from request body
         Filter filter = deserializeFilter(jsonFilter);                                                      // create filter object from json input file
-        System.out.println("\n" + "Received request "+ filter.getId() + " with filter: \n" 
+        System.out.println("\nReceived request "+ filter.getId() + " with filter: \n" 
                                 +  filter.toString()  
                                 + ", Thread: " + Thread.currentThread().threadId());
         RoomResult resultRooms = map(hasRoom(filter), filter);                                              // get array with results for reducer
@@ -365,7 +365,7 @@ public class Worker
     private void handleBookRoomRequest(BufferedReader in, OutputStream out) throws IOException {
         String jsonRoomName = extractBody(in);                                                                  // extract json with room name from request body
         String roomName = new Gson().fromJson(jsonRoomName, String.class);                             // create string with room name from json 
-        System.out.println("Received request for booking: " + roomName + "\n");
+        System.out.println("\nReceived request for booking: " + roomName + "\n");
         if(book(roomName)) {                                                                                    // book room by name and check if it is booked
             sendHttpResponse(out, 200, "OK", 
                             "{\"message\":\" " + roomName + " booked\"}",
@@ -380,7 +380,7 @@ public class Worker
     private void handleNewReviewRequest(BufferedReader in, OutputStream out) throws IOException, InterruptedException {
         String jsonReview = extractBody(in);                                                                // extract json from request body
         Review review = deserializeReview(jsonReview);                                                  // create review object from json input file
-        System.out.println("Received rating request: " + review.toString());
+        System.out.println("\nReceived rating request: " + review.toString());
         boolean done = giveReview(review);                                                                                  // get array with results for reducer
         if (done) { 
             sendHttpResponse(out, 200, "OK", "{\"message\":\"Review added\"}"
@@ -395,9 +395,10 @@ public class Worker
     {
         String jsonRequest = extractBody(in);                                                   // extract json with managerID from http request body
         Request request = deserializeRequest(jsonRequest);                                      // create a request object with manager id from json
-        System.out.println("Received request: " + request.getId() + " is Thread: " + Thread.currentThread().threadId()
-                            + " with: " + "\n" + "Manager ID: " + request.getManagerID());      // get manager ID from request object
-        int managerID = request.getManagerID();                                                 // get manager ID from request object
+        int managerID = request.getManagerID();                                           // get manager ID from request object
+        System.out.println("\n" + "Received request "+ request.getId() 
+                                + " with manager ID: "+ managerID 
+                                + ", Thread: " + Thread.currentThread().threadId());
         RoomResult bookings = resultBookings(isBooked(managerID), request);             // get array with bookings(booked rooms) for manager
         String jsonResults = serializeResults(bookings);                                // serialize results with bookings to json
         if (!bookings.getRooms().isEmpty()) {                                                         // if json with results is not null
@@ -413,8 +414,9 @@ public class Worker
     {
         String jsonRoom = extractBody(in);                                              // extract json of room object with given date range from http request body
         Room room = deserializeRoom(jsonRoom);                                          // create a room object with given date range from json
-        System.out.println("Received request: " + room.getId() + " is Thread: " + Thread.currentThread().threadId() 
-                            + " with: " + " \n" + "Date range: " + room.getDateRange() );
+        System.out.println("\nReceived request: " + room.getId() + " with:"  
+                            + " \n" + "Date range: " + room.getDateRange() 
+                            + ", Thread: " + Thread.currentThread().threadId());
         RoomResult bookings = resultBookings(isBookedDateRange(room.getDateRange()), room);
         //bookings.printRooms();
         String jsonResults = serializeResults(bookings);                                // serialize results with bookings to json

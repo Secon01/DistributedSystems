@@ -19,8 +19,8 @@ public class ConsoleApp3 extends Thread {
     private Scanner value1;
     private Scanner value2;
     private Scanner inp;
-    private String end;
-    private String start;
+    private String endDate;
+    private String startDate;
     private String finalJSONString;
     private int managerID;                              // manager's personal ID instance
     private Room room;                                  // room object instance
@@ -113,8 +113,8 @@ public class ConsoleApp3 extends Thread {
                         // Check if the user input matches the desired format  
                         while(true) {
                             value1 = new Scanner(System.in);
-                            start = value1.nextLine();    
-                            if (Pattern.matches(regex, start)) {    // check if regular expression of date format matches user's input
+                            startDate = value1.nextLine();    
+                            if (Pattern.matches(regex, startDate)) {    // check if regular expression of date format matches user's input
                                 break;
                             } else {
                                 System.out.println("Invalid date format. Please enter date in YYYY-MM-DD format!");
@@ -123,9 +123,9 @@ public class ConsoleApp3 extends Thread {
                         System.out.println("Enter your ending date");
                         while (true) {
                             value2 = new Scanner(System.in);
-                            end = value2.nextLine();                            
-                            if (Pattern.matches(regex, end)) {      // check if regular expression of date format matches user's input
-                                room.setDateRange(start ,end);      // set date range of room object
+                            endDate = value2.nextLine();                            
+                            if (Pattern.matches(regex, endDate)) {      // check if regular expression of date format matches user's input
+                                room.setDateRange(startDate ,endDate);      // set date range of room object
                                 break;
                             } else {
                                 System.out.println("Invalid date format. Please enter date in YYYY-MM-DD format!");
@@ -146,7 +146,6 @@ public class ConsoleApp3 extends Thread {
                 } 
                 break;
             case 2:
-                inp = new Scanner(System.in);
                 System.out.println("Type your peronal ID and press enter to proceed");
                 managerID = Integer.parseInt(inp.nextLine());
                 input = "get booking";
@@ -158,15 +157,14 @@ public class ConsoleApp3 extends Thread {
                 }
                 break;
             case 3:
-                inp = new Scanner(System.in);
                 room = new Room();                          // create an empty room object
                 System.out.println("Provide a valid date range");
                 System.out.println("Enter your starting date");
                 // Check if the user input matches the desired format  
                 while(true) {
                     value1 = new Scanner(System.in);
-                    start = value1.nextLine();    
-                    if (Pattern.matches(regex, start)) {    // check if regular expression of date format matches user's input
+                    startDate = value1.nextLine();    
+                    if (Pattern.matches(regex, startDate)) {    // check if regular expression of date format matches user's input
                         break;
                     } else {
                         System.out.println("Invalid date format. Please enter date in YYYY-MM-DD format!");
@@ -175,9 +173,9 @@ public class ConsoleApp3 extends Thread {
                 System.out.println("Enter your ending date");
                 while (true) {
                     value2 = new Scanner(System.in);
-                    end = value2.nextLine();                            
-                    if (Pattern.matches(regex, end)) {      // check if regular expression of date format matches user's input
-                        room.setDateRange(start ,end);      // set date range of room object
+                    endDate = value2.nextLine();                            
+                    if (Pattern.matches(regex, endDate)) {      // check if regular expression of date format matches user's input
+                        room.setDateRange(startDate ,endDate);      // set date range of room object
                         break;
                     } else {
                         System.out.println("Invalid date format. Please enter date in YYYY-MM-DD format!");

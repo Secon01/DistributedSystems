@@ -508,8 +508,9 @@ public class Master
         Room room = deserializeRoom(jsonRoom);                                      // get room object from json 
         setRequestIDRoom(room, reducer);                                            // set unique ID to room and reducer object
         String jsonDataRange = serializeRoom(room);                                 // create json of room with given data range from room object
-        System.out.println("Received request: " + room.getId()  + " is Thread: " + Thread.currentThread().threadId()
-                            + " with: " + "\n" +  "Date range: " + room.getDateRange());
+        System.out.println("\nReceived request: " + room.getId() + " with:"  
+                            + " \n" + "Date range: " + room.getDateRange() 
+                            + ", Thread: " + Thread.currentThread().threadId());
         for(Worker worker : workerConfig.workers) {                                 // for each worker configured
             Thread work = new Thread(() -> {                                        // create thread 
                 Socket socket = null;
