@@ -1,6 +1,5 @@
 package ds;
 
-//JSON related packages
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDate;
@@ -8,19 +7,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Scanner;
 import java.util.regex.Pattern;
-import org.json.JSONObject;
-
-import org.eclipse.collections.api.bag.MutableBag;
-import org.eclipse.collections.impl.factory.Bags;
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
+import org.eclipse.collections.api.bag.MutableBag;
+import org.eclipse.collections.impl.factory.Bags;
 import java.io.*;
 import java.net.Socket;
 
 public class ConsoleApp3 extends Thread {
-    private boolean done;
     private Scanner value1;
     private Scanner value2;
     private Scanner inp;
@@ -55,7 +50,7 @@ public class ConsoleApp3 extends Thread {
         this.room.setDateRange(start, end);     // set starting and ending date of room        
     }
     // Default constructor for running menu
-    ConsoleApp3()
+    ConsoleApp3() throws InterruptedException
     {
         runMenu();
     }
@@ -68,16 +63,17 @@ public class ConsoleApp3 extends Thread {
     }
     // Prints menu
     public void menu() {
-        System.out.println("Select an action");
-        System.out.println(" 1) Insert House Information ");
-        System.out.println(" 2) Show Given Indormation ");
+        System.out.println("Please select a number and press enter to proceed. If you want to exit press 0 and enter to proceed.");
+        System.out.println(" 1) Insert house information ");
+        System.out.println(" 2) Get your bookings ");
+        System.out.println(" 3) Get bookings by area");
         System.out.println(" 0) Exit");
     }
     // Run menu
-    public void runMenu() {
+    public void runMenu() throws InterruptedException {
 
         welcome();
-        while (!done) {
+        while (true) {
             menu();
             int choice = getInput();
             performAction(choice);
@@ -88,7 +84,7 @@ public class ConsoleApp3 extends Thread {
     public int getInput() {
         inp = new Scanner(System.in); // initialize scanner
         int choice = -1;
-        while (choice < 0 || choice > 4) { // user input number out of bounds
+        while (choice < 0 || choice > 3) { // user input number out of bounds
             try {
                 System.out.println("Enter your selection: ");
                 choice = Integer.parseInt(inp.nextLine()); // user input
@@ -99,11 +95,11 @@ public class ConsoleApp3 extends Thread {
         return choice;
     }
 
-    public void performAction(int choice) {
+    public void performAction(int choice) throws InterruptedException {
         switch (choice) {
             case 0:
-                System.out.println(" Your room is now available for booking");
-                done = true;
+                System.out.println("Thank you for using HouseBooking!");
+                System.exit(0);
                 break;
             case 1:
                 System.out.println("Enter the path of your JSON file: ");
@@ -111,15 +107,14 @@ public class ConsoleApp3 extends Thread {
                 try {
                     String jsonString = JsonUtils.readFileToString(filePath); // convert file path of json to string
                     if (jsonString != null) {
-                        JSONObject jsonObject = new JSONObject(jsonString);
-                        System.out.println("Main Information JSON File :\n" + jsonString);
+                        Room room = deserializeRoom(jsonString);    // create room object from given json
+                        //System.out.println("Main Information JSON File :\n" + jsonString);
                         System.out.println("Enter your starting date");
                         // Check if the user input matches the desired format  
                         while(true) {
                             value1 = new Scanner(System.in);
                             start = value1.nextLine();    
                             if (Pattern.matches(regex, start)) {    // check if regular expression of date format matches user's input
-                                jsonObject.put("StartDate", start);
                                 break;
                             } else {
                                 System.out.println("Invalid date format. Please enter date in YYYY-MM-DD format!");
@@ -130,14 +125,17 @@ public class ConsoleApp3 extends Thread {
                             value2 = new Scanner(System.in);
                             end = value2.nextLine();                            
                             if (Pattern.matches(regex, end)) {      // check if regular expression of date format matches user's input
-                                jsonObject.put("EndDate", end);
+                                room.setDateRange(start ,end);      // set date range of room object
                                 break;
                             } else {
                                 System.out.println("Invalid date format. Please enter date in YYYY-MM-DD format!");
                             }                                                                        
                         }
-                        finalJSONString = jsonObject.toString();
+                        finalJSONString = serializeRoom(room);      // serialize room with changes to json                                                  
                         System.out.println("Final JSON File Content:\n" + finalJSONString);
+                        input = "add room";
+                        this.run();
+                        System.out.println("Your room is now available for booking!\n");
                     } else {
                         System.out.println("Failed to read the JSON file.");
                     }
@@ -148,21 +146,45 @@ public class ConsoleApp3 extends Thread {
                 } 
                 break;
             case 2:
-                System.out.println("These are your apartments' information:\n" + finalJSONString);
-                break;
-            case 3:
-                inp = new Scanner(System.in);
-                System.out.println("Type 'add room' and press enter to proceed");
-                input = inp.nextLine();
-                this.run();                 // call run of current thread
-                break;
-            case 4:
                 inp = new Scanner(System.in);
                 System.out.println("Type your peronal ID and press enter to proceed");
                 managerID = Integer.parseInt(inp.nextLine());
-                System.out.println("Type 'get booking' and press enter to proceed");
-                input = inp.nextLine();
+                input = "get booking";
                 this.run();                 // call run of current thread
+                //Thread.sleep(1000);
+                Collections.sort(reducers);                     // sort reducers array list based on current id
+                for(Reducer r : reducers) {                   // for each reducer obejct in reducers arraylist
+                    r.printRooms();                           // print results
+                }
+                break;
+            case 3:
+                inp = new Scanner(System.in);
+                room = new Room();                          // create an empty room object
+                System.out.println("Provide a valid date range");
+                System.out.println("Enter your starting date");
+                // Check if the user input matches the desired format  
+                while(true) {
+                    value1 = new Scanner(System.in);
+                    start = value1.nextLine();    
+                    if (Pattern.matches(regex, start)) {    // check if regular expression of date format matches user's input
+                        break;
+                    } else {
+                        System.out.println("Invalid date format. Please enter date in YYYY-MM-DD format!");
+                    }                                                                        
+                }  
+                System.out.println("Enter your ending date");
+                while (true) {
+                    value2 = new Scanner(System.in);
+                    end = value2.nextLine();                            
+                    if (Pattern.matches(regex, end)) {      // check if regular expression of date format matches user's input
+                        room.setDateRange(start ,end);      // set date range of room object
+                        break;
+                    } else {
+                        System.out.println("Invalid date format. Please enter date in YYYY-MM-DD format!");
+                    }                                                                        
+                }        
+                input = "area booking";
+                this.run(); 
                 break;
             default:
                 System.out.println("An unknown error has occured!");
@@ -199,20 +221,16 @@ public class ConsoleApp3 extends Thread {
             .registerTypeAdapter(LocalDate.class, new LocalDateSerializer())
             .create();
         return gson.toJson(room);
-    } 
-    /*
-    // Returns number of bookings per area
-    private int areaBookings(String area, RoomResult results) 
-    {
-        int bookings = 0;
-        for(Room room : results.getRooms()) {
-            if(area.equals(room.getArea())) {   
-                bookings++;
-            }
-        }
-        return bookings;
     }
-    */
+    // Deserializes json to a room object
+    private Room deserializeRoom(String json)
+    {
+        Gson gson = new GsonBuilder()
+            .registerTypeAdapter(LocalDate.class, new LocalDateDeserializer())
+            .create();
+        return gson.fromJson(json, Room.class);
+    }    
+     
     public void run() 
     {
         Socket socket = null;
@@ -226,8 +244,8 @@ public class ConsoleApp3 extends Thread {
             if (input.equals("add room")) {                     // check if input is equal to 'add room'
                 sendPostNewRoomRequest(out, finalJSONString);
                 // Read the response
-                String responseLine = extractBody(in);
-                System.out.println(responseLine);
+                String responseBody = extractBody(in);
+                System.out.println("\n" + responseBody);
             } else if(input.equals("get booking")) {               // check if input is equal to 'get booking'
                 reducers = new ArrayList<>();            // array list with reducer objects for printing
                 sendGetBookRequest(out);                                    // send request in order to get the bookings
@@ -238,13 +256,13 @@ public class ConsoleApp3 extends Thread {
                        reducers.add(reducer);                       // add reducer objects with results in reducers array
                     }
                 } else {
-                    System.out.println(json);                 // read the response
+                    System.out.println("\n" + json + "\n");                 // read the response
                 }
             } else if(input.equals("area booking")) {              // check if input is equal to 'area bookings'
-                reducers = new ArrayList<>();            // array list with reducer objects for printing
+                reducers = new ArrayList<>();                           // array list with reducer objects for printing
                 sendAreaBookRequest(out);
                 String json = extractBody(in);                              // extract json from http request body 
-                if (!json.isEmpty()) {
+                if (!json.startsWith("{\"message\"")) {
                     Reducer reducer = deserializeReducer(json);     // create reducer object from json
                     synchronized(reducer) {
                        reducers.add(reducer);                       // add reducer objects with results in reducers array
@@ -253,17 +271,17 @@ public class ConsoleApp3 extends Thread {
                     for(RoomResult result: reducer.getResults()) {
                         for(Room room : result.getRooms()) {
                             int bookings = 1;
-                            //System.out.println(room.toString());
-                            //System.out.println();
                             areaBookings.addOccurrences(room.getArea(), bookings);
                         }
                     }
-                    areaBookings.forEachWithOccurrences((key, occurrences) -> System.out.println(key + ": " +  occurrences));               
+                    areaBookings.forEachWithOccurrences((key, occurrences) -> 
+                    System.out.println("\n" + key + ": " +  occurrences + "\n"));               
                 } else {
-                    String responseLine;
-                    while ((responseLine = in.readLine()) != null) {
-                        System.out.println(responseLine);
-                    }    
+                    //String responseLine;
+                    //while ((responseLine = in.readLine()) != null) {
+                    //    System.out.println(responseLine);
+                    //}
+                    System.out.println("\n" + json + "\n");    
                 }
             } else {
                 System.out.println("Unknown command. Use 'getRoom' or 'newRoom'.");
@@ -335,26 +353,12 @@ public class ConsoleApp3 extends Thread {
         out.println(jsonBody);
     }
     public static void main(String[] args) throws IOException, InterruptedException {
-        //new ConsoleApp3().start();
+        new ConsoleApp3().start();
+        /* 
         Scanner sc = new Scanner(System.in);
         System.out.println("Give input");
         String in = sc.nextLine();
         if(in.equals("add room")) {
-            /* 
-            Room room1 = new Room(12,"Luxury Suite", 2, 200.0, 5,
-            "Downtown", 100, "luxury_suite.jpg", "2024-04-01", "2024-04-07", true);
-            Room room2 = new Room(12,"Cozy Cabin", 4, 150.0, 4,
-                        "Mountains", 80, "cozy_cabin.jpg", "2024-04-02", "2024-04-08", true);
-            Room room3 = new Room(12,"Beach House", 6, 300.0, 5,
-                        "Beachfront", 120, "beach_house.jpg", "2024-04-03", "2024-04-09", true);
-            Room room4 = new Room(34,"City Apartment", 3, 180.0, 4,
-                        "Urban", 90, "city_apartment.jpg", "2024-04-04", "2024-04-10", true);
-            Room room5 = new Room(34,"Country Cottage", 4, 160.0, 4,
-                        "Rural", 85, "country_cottage.jpg", "2024-04-05", "2024-04-11", true);
-            Room room6 = new Room(34, "Mountain Chalet", 5, 250.0, 5,
-                        "Mountains", 110, "mountain_chalet.jpg", "2024-04-06", "2024-04-12", true);
-            */
-            
             for(int i = 0; i < 1; i++) {
                 Room room1 = new Room(7, "Luxury Suite 1", 2, 200.0, 5,
                         "Athens", 100, "luxury_suite_1.jpg", "2024-04-01", "2024-04-07", true);
@@ -406,5 +410,6 @@ public class ConsoleApp3 extends Thread {
             }         
         }
         sc.close();   
+        */
     }
 }

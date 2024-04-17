@@ -162,8 +162,8 @@ public class Worker
                     fieldR.setAccessible(true);
                     Object valueF = fieldF.get(filter);
                     Object valueR = fieldR.get(room);
-                    System.out.println("FILTER: " + valueF);
-                    System.out.println("ROOM: " + valueR);
+                    //System.out.println("FILTER: " + valueF);
+                    //System.out.println("ROOM: " + valueR);
                     if(valueF.getClass() == DateRange.class) {
                         if(((DateRange) valueF).getStartDate() == null || ((DateRange) valueF).getEndDate() == null) {
                             continue;
@@ -186,7 +186,6 @@ public class Worker
                     e.printStackTrace();
                 }
             }
-            System.out.println("Result is:" + result);
             if(result) {
                 indexes.add(rooms.indexOf(room));       // add index of iterated room to array
             } 
@@ -340,7 +339,7 @@ public class Worker
     private void handleNewRoomRequest(BufferedReader in, OutputStream out) throws IOException {
         String jsonRoom = extractBody(in);                                                                  // extract json from request body
         Room room = deserializeRoom(jsonRoom);                                                              // create filter object from json input file
-        System.out.println(room.toString() + "\n");
+        System.out.println("\n" + room.toString());
         addRoom(room);                                                                                      // add room to array
         sendHttpResponse(out, 200, "OK", "{\"message\":\" " +room.getRoomName() +" added\"}",
                              "application/json");                                               // send response for succesfull http request

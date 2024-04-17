@@ -308,7 +308,7 @@ public class Dummy extends Thread {
       sc.close();
       if(input .equals("search")) {  // Search()
          for(int i = 0; i < 1; i++) {
-            (new Dummy("Crete", "2024-04-06", "2024-04-12", 0, 0.0, 0)).start(); 
+            (new Dummy("Larisa", "2024-04-06", "2024-04-13", 0, 0.0, 0)).start(); 
          }
          Thread.sleep(1000);
          Collections.sort(reducers);         // sort reducers array list based on current id
@@ -317,8 +317,9 @@ public class Dummy extends Thread {
          }  
       } else if (input.equals("book")){   // Book()
          for(int i = 0; i < 2; i++) {
-            new Dummy("Double Room").start();
+            new Dummy("HotelPoseidon").start();
             /* 
+            new Dummy("Double Room").start();
             new Dummy("Single Room").start();
             new Dummy("Family Room").start();
             new Dummy("Suite").start();

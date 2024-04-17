@@ -22,7 +22,7 @@ public class Room extends Request
     
     // Constructor for when starting date and ending date are given 
     Room(int id, String name, int guests, double price, double stars,
-            String area, int reviews, String image, String startDate, String endDate, boolean available)
+            String area, int reviews, String image, String start, String end, boolean available)
     {
         this.setManagerID(id);      
         this.roomName = name;
@@ -32,14 +32,13 @@ public class Room extends Request
         this.area = area;
         this.reviews = reviews;
         this.roomImage = image;
-        this.startDate = startDate;
-        this.endDate = endDate;
+        this.startDate = start;
+        this.endDate = end;
         this.available = available;
         this.dateRange = new DateRange();
-        this.dateRange.setStartDate(startDate);
-        this.dateRange.setEndDate(endDate);
+        this.dateRange.setStartDate(this.startDate);
+        this.dateRange.setEndDate(this.endDate);
     }
-    
     // Constructor for null values of start & end dates
     // because of LocalDate parse() method
     Room(int id, String name, int guests, double price, double stars,
@@ -118,17 +117,19 @@ public class Room extends Request
     public void setRoomImage(String roomImage) {
         this.roomImage = roomImage;
     }
-    public void setStartDate(String StartDate) {
-        this.startDate = StartDate;
+    public void setStartDate(String startDate) {
+        this.startDate = startDate;
     }
-    public void setEndDate(String EndDate) {
-        this.endDate = EndDate;
+    public void setEndDate(String endDate) {
+        this.endDate = endDate;
     }
     public void setAvailable(boolean available) {
         this.available = available;
     }
     public void setDateRange(String startDate, String endDate) {
         this.dateRange = new DateRange();
+        this.startDate = startDate;
+        this.endDate = endDate;
         this.dateRange.setStartDate(startDate);
         this.dateRange.setEndDate(endDate);
     }

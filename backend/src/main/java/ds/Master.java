@@ -405,8 +405,7 @@ public class Master
             } catch (IOException e) {
                 e.printStackTrace();
             }     
-            System.out.println(responseBody);       
-            //System.out.println(responseBody.toString());    
+            System.out.println("\n" + responseBody);          
             try {
                 consumeRemainingRequest(inputWorker);
             } catch (IOException e) {
@@ -431,10 +430,8 @@ public class Master
         request.setManagerID(managerID);                                            // set manager ID field of request object
         setUniqueBookingID(request, reducer);                                       // set unique ID to request and reducer object 
         String jsonRequest = serializeRequest(request);                             // create json from request object
-        System.out.println("Received request: " + request.getId() + " is Thread: " + Thread.currentThread().threadId()
-                            + " with: " + "\n" + "Manager ID: " + request.getManagerID());
         System.out.println("\n" + "Received request "+ request.getId() 
-                                + " with manager ID: "+ managerID + "\n" 
+                                + " with manager ID: "+ managerID 
                                 + ", Thread: " + Thread.currentThread().threadId());
         for(Worker worker : workerConfig.workers) {                                 // for each worker configured
             Thread work = new Thread(() -> { 
@@ -488,7 +485,7 @@ public class Master
             try {
                 // Send response for succesfull http request
                 sendHttpResponse(out, 404, "Not Found", 
-                                "{\"message\":\"Bookings for manager ID" +reducer.getCurrentID() + " not found\"}",
+                                "{\"message\":\"Bookings not found\"}",
                     "application/json");                  
             } catch (IOException e) {
                 e.printStackTrace();
@@ -563,7 +560,7 @@ public class Master
             work.start();
             work.join();
         }           
-        if(reducer.getResults().isEmpty()) {                            // if there are no results
+        if(reducer.isEmpty()) {                            // if there are no results
             try {
                 // Send response for unsuccesfull http request
                 sendHttpResponse(out, 404, "Not Found", "{\"message\":\"Bookings not found\"}"
