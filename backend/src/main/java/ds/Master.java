@@ -24,24 +24,24 @@ public class Master
     // Master constructor
     Master() throws IOException
     {
-        serverSocket = new ServerSocket(port);                           // create socket
+        serverSocket = new ServerSocket(port);                          // create socket
         System.out.println("Master is listening on port " + port);
         while(true) {
-            Socket connection = serverSocket.accept();
-            new Thread(() -> {
+            Socket connection = serverSocket.accept();                  // accept the incoming connections 
+            new Thread(() -> {                                          // create new thread 
                 try {
                     runServer(connection);                              // run server side of master
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    e.printStackTrace();                                // exception in thread 
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    e.printStackTrace();                                // exception in thread 
                 }
             }).start();
         }
     }
     // Give unique number in order in the next request
     private synchronized int getUniqueNumber() {
-        return requestID++;               
+        return requestID++;                                           
     }
 
     // Sets unique id to each request with filter and to reducer's id
@@ -372,27 +372,27 @@ public class Master
         final String json = jsonReview;     // make it final to work
         // Client side of master
         int workerID = hashFunc(review.getRoomForReview(), workerConfig.nofWorkers);           // hash room name and get worker id to send request  
-        int workerPort = getPort(workerID);                                         // for each worker configured
+        int workerPort = getPort(workerID);                                                    // for each worker configured
         Thread rev = new Thread(() -> {
             Socket socket = null;
             try {
                 socket = new Socket(hostname, workerPort);
             } catch (IOException e) {
                 e.printStackTrace();
-            }                                 // open socket to worker's port
+            }                                   // open socket to worker's port
             PrintWriter output = null;
             try {
                 output = new PrintWriter(socket.getOutputStream(), true);
             } catch (IOException e) {
                 e.printStackTrace();
-            }                         // set output
+            }                                   // set output
             BufferedReader inputWorker = null;
             try {
                 inputWorker = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             } catch (IOException e) {
                 e.printStackTrace();
-            }        // buffer for inputs from worker            
-            sendNewReviewRequest(output,json);                                                              // send request
+            }                                   // buffer for inputs from worker            
+            sendNewReviewRequest(output,json);                                                 // send a new Review request
             // Read the response
             String responseBody = null;                                
             try {
@@ -466,9 +466,9 @@ public class Master
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                RoomResult results =  deserializeResults(responseBody);     // deserialize json with searching results
+                RoomResult results =  deserializeResults(responseBody);             // deserialize json with searching results
                 try {
-                    reducer.reduce(results.getId(), results);               // reduce results with same id
+                    reducer.reduce(results.getId(), results);                       // reduce results with same id
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -478,13 +478,13 @@ public class Master
                     e.printStackTrace();
                 }
                 try {
-                    socket.close();                                         // close socket
+                    socket.close();                                                 // close socket
                 } catch (IOException e) {
                     e.printStackTrace();
                 } 
             });
-            work.start();                                                   // start thread
-            work.join();                                                    // call external thread to wait for inside thread to finish
+            work.start();                                                           // start thread
+            work.join();                                                            // call external thread to wait for inside thread to finish
         }
         if(reducer.isEmpty()) {
             try {
@@ -660,8 +660,9 @@ public class Master
         out.write(httpResponse.getBytes());
     }
 
+    // Clear buffer in case anything is left
     private static void consumeRemainingRequest(BufferedReader in) throws IOException {
-        while (in.ready()) {
+        while (in.ready()) {                                                            
             in.readLine();
         }
     }

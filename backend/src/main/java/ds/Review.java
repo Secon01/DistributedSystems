@@ -5,16 +5,19 @@ import java.lang.reflect.Field;
 public class Review extends Request {
     private double reviewStars;
     private String roomForReview;
-  
+
+    // default Constructor
     Review(){
 
     }
     
+    // Constructor
     Review(double rev, String room){
         this.reviewStars=rev;
         this.roomForReview=room;
     }
-    //setters
+    
+    // Setters
     public void setReview(double r){
         this.reviewStars = r;
     }
@@ -22,7 +25,7 @@ public class Review extends Request {
         this.roomForReview = ro ;
     }
 
-    //getters 
+    // Getters 
     public double getReview(){
         return reviewStars ;
     }
@@ -30,20 +33,19 @@ public class Review extends Request {
     public String getRoomForReview(){
         return roomForReview ;
     }
-    public int numNonZero()
     
-    {
+    // Checks the count of properties that are non null/0/0.0
+    public int numNonZero() {
         int count = 0;
         Field[] fields = this.getClass().getDeclaredFields();
         for (Field field : fields) {
             field.setAccessible(true);
             try {
                 Object value = field.get(this);
-
-                if(value != null && !value.equals(0) && !value.equals(0.0)) {
-                    count++;
+                if(value != null && !value.equals(0) && !value.equals(0.0)) {    // if value is not null/0/0.0
+                    count++;                                                     // increase count
                 }
-            } catch (IllegalAccessException e) {
+            } catch (IllegalAccessException e) {                                
                 e.printStackTrace();
             }
         }
