@@ -70,7 +70,7 @@ public class Filter extends Request
                     if(dateRange.getStartDate() == null || dateRange.getEndDate() == null) {    // if start date or end date is null  
                         continue;
                     } else {
-                        count++;
+                        count++;                                                                // increase count 
                     }
                 } else if(value != null && !value.equals(0) && !value.equals(0.0)) {
                     count++;
