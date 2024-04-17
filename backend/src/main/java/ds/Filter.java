@@ -40,7 +40,7 @@ public class Filter extends Request
     {
         this.stars = s;
     }
-    // Getters
+    // Getters of filter attributes
     public String getArea() {
         return area;
     }
@@ -81,7 +81,7 @@ public class Filter extends Request
         }
         return count;
     }
-
+    // Prints Filter object's properties as a String
     public String toString()
     {
         return "[" + this.area + ", " + this.dateRange.toString() + ", " + this.guests + 
