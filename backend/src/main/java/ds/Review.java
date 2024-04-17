@@ -30,7 +30,7 @@ public class Review extends Request {
     public String getRoomForReview(){
         return roomForReview ;
     }
-    // Checks the count of properties that are non null/0/0.0
+    //  Computes how many non null or non 0 values does this object has
     public int numNonZero() {
         int count = 0;
         Field[] fields = this.getClass().getDeclaredFields();
