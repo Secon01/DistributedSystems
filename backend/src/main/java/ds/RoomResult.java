@@ -10,18 +10,19 @@ public class RoomResult
     // Costructor 
     RoomResult()
     {
-        this.rooms = new ArrayList<>();            // initialize array when the method is called   
+        this.rooms = new ArrayList<>();            // initialize a new array when the method is called   
     }
 
-    // Getters, Setters
+    // Getters
     public int getId() {
-        return id;        
+        return id;                                
     }
 
     public ArrayList<Room> getRooms() {
         return rooms;
     }
 
+    // Setters
     public void setId(int id) {
         this.id = id;
     }
