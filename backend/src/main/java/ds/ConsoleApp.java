@@ -1,5 +1,10 @@
 package ds;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSyntaxException;
+import java.io.*;
+import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDate;
@@ -7,13 +12,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Scanner;
 import java.util.regex.Pattern;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonSyntaxException;
 import org.eclipse.collections.api.bag.MutableBag;
 import org.eclipse.collections.impl.factory.Bags;
-import java.io.*;
-import java.net.Socket;
 
 public class ConsoleApp extends Thread {
     private Scanner value1;
@@ -105,16 +105,15 @@ public class ConsoleApp extends Thread {
                 System.out.println("Enter the path of your JSON file: ");
                 String filePath = inp.nextLine();
                 try {
-                    String jsonString = readFileToString(filePath); // convert file path of json to string
+                    String jsonString = readFileToString(filePath);                             // convert file path of json to string
                     if (jsonString != null) {
-                        Room room = deserializeRoom(jsonString);    // create room object from given json
-                        //System.out.println("Main Information JSON File :\n" + jsonString);
+                        Room room = deserializeRoom(jsonString);                                // create room object from given json
                         System.out.println("Enter your starting date");
                         // Check if the user input matches the desired format  
                         while(true) {
                             value1 = new Scanner(System.in);
-                            startDate = value1.nextLine();    
-                            if (Pattern.matches(regex, startDate)) {    // check if regular expression of date format matches user's input
+                            startDate = value1.nextLine();                                      // read starting date
+                            if (Pattern.matches(regex, startDate)) {                            // check if regular expression of date format matches user's input
                                 break;
                             } else {
                                 System.out.println("Invalid date format. Please enter date in YYYY-MM-DD format!");
@@ -122,16 +121,16 @@ public class ConsoleApp extends Thread {
                         }  
                         System.out.println("Enter your ending date");
                         while (true) {
-                            value2 = new Scanner(System.in);
+                            value2 = new Scanner(System.in);                                   //read ending date 
                             endDate = value2.nextLine();                            
-                            if (Pattern.matches(regex, endDate)) {      // check if regular expression of date format matches user's input
-                                room.setDateRange(startDate ,endDate);      // set date range of room object
+                            if (Pattern.matches(regex, endDate)) {                             // check if regular expression of date format matches user's input
+                                room.setDateRange(startDate ,endDate);                         // set date range of room object
                                 break;
                             } else {
                                 System.out.println("Invalid date format. Please enter date in YYYY-MM-DD format!");
                             }                                                                        
                         }
-                        finalJSONString = serializeRoom(room);      // serialize room with changes to json                                                  
+                        finalJSONString = serializeRoom(room);                                 // serialize room with changes to json                                                  
                         System.out.println("Final JSON File Content:\n" + finalJSONString);
                         input = "add room";
                         this.run();
@@ -149,22 +148,21 @@ public class ConsoleApp extends Thread {
                 System.out.println("Type your peronal ID and press enter to proceed");
                 managerID = Integer.parseInt(inp.nextLine());
                 input = "get booking";
-                this.run();                 // call run of current thread
-                //Thread.sleep(1000);
-                Collections.sort(reducers);                     // sort reducers array list based on current id
-                for(Reducer r : reducers) {                   // for each reducer obejct in reducers arraylist
-                    r.printRooms();                           // print results
+                this.run();                                                                   // call run of current thread
+                Collections.sort(reducers);                                                   // sort reducers array list based on current id
+                for(Reducer r : reducers) {                                                   // for each reducer obejct in reducers arraylist
+                    r.printRooms();                                                           // print results
                 }
                 break;
             case 3:
-                room = new Room();                          // create an empty room object
+                room = new Room();                                                             // create an empty room object
                 System.out.println("Provide a valid date range");
                 System.out.println("Enter your starting date");
                 // Check if the user input matches the desired format  
                 while(true) {
                     value1 = new Scanner(System.in);
-                    startDate = value1.nextLine();    
-                    if (Pattern.matches(regex, startDate)) {    // check if regular expression of date format matches user's input
+                    startDate = value1.nextLine();                                              // read starting date
+                    if (Pattern.matches(regex, startDate)) {                                    // check if regular expression of date format matches user's input
                         break;
                     } else {
                         System.out.println("Invalid date format. Please enter date in YYYY-MM-DD format!");
@@ -173,9 +171,9 @@ public class ConsoleApp extends Thread {
                 System.out.println("Enter your ending date");
                 while (true) {
                     value2 = new Scanner(System.in);
-                    endDate = value2.nextLine();                            
-                    if (Pattern.matches(regex, endDate)) {      // check if regular expression of date format matches user's input
-                        room.setDateRange(startDate ,endDate);      // set date range of room object
+                    endDate = value2.nextLine();                                               // read ending date
+                    if (Pattern.matches(regex, endDate)) {                                     // check if regular expression of date format matches user's input
+                        room.setDateRange(startDate ,endDate);                                 // set date range (starting - ending) of room object
                         break;
                     } else {
                         System.out.println("Invalid date format. Please enter date in YYYY-MM-DD format!");
@@ -227,6 +225,7 @@ public class ConsoleApp extends Thread {
         return gson.fromJson(json, Room.class);
     }    
      
+    @Override
     public void run() 
     {
         Socket socket = null;
@@ -243,25 +242,25 @@ public class ConsoleApp extends Thread {
                 String responseBody = extractBody(in);
                 System.out.println("\n" + responseBody);
             } else if(input.equals("get booking")) {               // check if input is equal to 'get booking'
-                reducers = new ArrayList<>();            // array list with reducer objects for printing
+                reducers = new ArrayList<>();                               // array list with reducer objects for printing
                 sendGetBookRequest(out);                                    // send request in order to get the bookings
                 String json = extractBody(in);                              // extract json from http request body 
                 if (!json.startsWith("{\"message\"")) {
-                    Reducer reducer = deserializeReducer(json);     // create reducer object from json
+                    Reducer reducer = deserializeReducer(json);             // create reducer object from json
                     synchronized(reducer) {
-                       reducers.add(reducer);                       // add reducer objects with results in reducers array
+                       reducers.add(reducer);                               // add reducer objects with results in reducers array
                     }
                 } else {
                     System.out.println("\n" + json + "\n");                 // read the response
                 }
             } else if(input.equals("area booking")) {              // check if input is equal to 'area bookings'
-                reducers = new ArrayList<>();                           // array list with reducer objects for printing
+                reducers = new ArrayList<>();                                // array list with reducer objects for printing
                 sendAreaBookRequest(out);
                 String json = extractBody(in);                              // extract json from http request body 
                 if (!json.startsWith("{\"message\"")) {
-                    Reducer reducer = deserializeReducer(json);     // create reducer object from json
+                    Reducer reducer = deserializeReducer(json);             // create reducer object from json
                     synchronized(reducer) {
-                       reducers.add(reducer);                       // add reducer objects with results in reducers array
+                       reducers.add(reducer);                               // add reducer objects with results in reducers array
                     }
                     MutableBag<String> areaBookings = Bags.mutable.empty();
                     for(RoomResult result: reducer.getResults()) {
@@ -273,22 +272,18 @@ public class ConsoleApp extends Thread {
                     areaBookings.forEachWithOccurrences((key, occurrences) -> 
                     System.out.println("\n" + key + ": " +  occurrences + "\n"));               
                 } else {
-                    //String responseLine;
-                    //while ((responseLine = in.readLine()) != null) {
-                    //    System.out.println(responseLine);
-                    //}
                     System.out.println("\n" + json + "\n");    
                 }
             } else {
                 System.out.println("Unknown command. Use 'getRoom' or 'newRoom'.");
-                inp.close();                 // close scanner
+                inp.close();                                                // close scanner
                 return;
             }
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
             try {
-                socket.close();             // close socket
+                socket.close();                                             // close socket
             } catch (IOException e) {
                     e.printStackTrace();
             }
@@ -297,12 +292,11 @@ public class ConsoleApp extends Thread {
     // Extracts body from http search room request
     private static String extractBody(BufferedReader in) throws IOException 
     {
-        StringBuilder requestBody = new StringBuilder();    // build the body of request into string
-        String line;                                        // represents each line of http header
+        StringBuilder requestBody = new StringBuilder();                    // build the body of request into string
+        String line;                                                        // represents each line of http header
         // Extract content length
         int contentLength = 0;
-        while (!(line = in.readLine()).isEmpty()) {
-            //System.out.println(line);
+        while (!(line = in.readLine()).isEmpty()) {                         // while message is not empty yet
             if (line.toLowerCase().startsWith("content-length:")) {
             contentLength = Integer.parseInt(line.substring("content-length:".length()).trim());
             }
@@ -349,7 +343,7 @@ public class ConsoleApp extends Thread {
         out.println(jsonBody);
     }
     public static void main(String[] args) throws IOException, InterruptedException {
-        new ConsoleApp().start();
+        //new ConsoleApp().start();
         /* 
         Scanner sc = new Scanner(System.in);
         System.out.println("Give input");
@@ -377,22 +371,22 @@ public class ConsoleApp extends Thread {
                 Room room10 = new Room(13, "Penthouse", 6, 500.0, 5,
                         "Larisa", 200, "penthouse.jpg", "2024-04-10", "2024-04-16", true);         
                 input = in;
-                new ConsoleApp3(room1).start();
-                new ConsoleApp3(room2).start();
-                new ConsoleApp3(room3).start();       
-                new ConsoleApp3(room4).start();       
-                new ConsoleApp3(room5).start();       
-                new ConsoleApp3(room6).start(); 
-                new ConsoleApp3(room7).start(); 
-                new ConsoleApp3(room8).start(); 
-                new ConsoleApp3(room9).start();
-                new ConsoleApp3(room10).start();              
+                new ConsoleApp(room1).start();
+                new ConsoleApp(room2).start();
+                new ConsoleApp(room3).start();       
+                new ConsoleApp(room4).start();       
+                new ConsoleApp(room5).start();       
+                new ConsoleApp(room6).start(); 
+                new ConsoleApp(room7).start(); 
+                new ConsoleApp(room8).start(); 
+                new ConsoleApp(room9).start();
+                new ConsoleApp(room10).start();              
             }
         } else if(in.equals("get booking")) {
             input = in;
             for(int i = 0; i < 1; i++) {
-                new ConsoleApp3(7).start();
-                new ConsoleApp3(13).start();
+                new ConsoleApp(7).start();
+                new ConsoleApp(13).start();
                 Thread.sleep(1000);
                 Collections.sort(reducers);                     // sort reducers array list based on current id
                 for(Reducer r : reducers) {                   // for each reducer obejct in reducers arraylist
@@ -402,10 +396,10 @@ public class ConsoleApp extends Thread {
         } else if(in.equals("area booking")) {
             input = in;
             for(int i = 0; i < 1; i++) {
-                new ConsoleApp3("2024-04-01", "2024-04-16").start();
+                new ConsoleApp("2024-04-01", "2024-04-16").start();
             }         
         }
         sc.close();   
-        */
+       */ 
     }
 }
