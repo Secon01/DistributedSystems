@@ -5,7 +5,7 @@ import java.util.ArrayList;
 public class Reducer implements Comparable<Reducer>
 {
     private ArrayList<RoomResult> results;            // Array with selected rooms based on given filter
-    private int currentID;
+    private int currentID;                            // current id
 
     // Constructor
     Reducer()
@@ -33,12 +33,12 @@ public class Reducer implements Comparable<Reducer>
             wait();
         }    
     }
-    // Checks if the ArrayList of the RoomResult type obj is empty
+    // Checks if the ArrayList of the RoomResult type objects is empty
     public boolean isEmpty()
     {
         boolean empty = true;
         for(RoomResult result : results) {
-            if(!result.getRooms().isEmpty()) {          // if ArrayList of result obj is not empty
+            if(!result.getRooms().isEmpty()) {          // if element of the Arraylist is not empty
                 empty = false;                          // make empty false
             }
         }
@@ -56,6 +56,7 @@ public class Reducer implements Comparable<Reducer>
         }
     }
     // Compares reducer objects based on their current ID
+    @Override
     public int compareTo(Reducer other)
     {
         return Integer.compare(this.currentID, other.currentID);

@@ -1,6 +1,8 @@
 // Master class
 // Communication protocol is based on HTTP 
 package ds;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -26,7 +28,7 @@ public class Master
     // Master constructor
     Master() throws IOException
     {
-        serverSocket = new ServerSocket(port);                          // create socket
+        serverSocket = new ServerSocket(port);                          // create server socket
         System.out.println("Master is listening on port " + port);
         while(true) {
             Socket connection = serverSocket.accept();                  // accept the incoming connections 
@@ -147,28 +149,22 @@ public class Master
         BufferedReader input = new BufferedReader(new InputStreamReader(connection.getInputStream()));      // get input stream in buffered reader
         OutputStream output = connection.getOutputStream();                                                 // get output stream from master's socket
 
-        String requestLine = input.readLine();                                                          // set request line 
+        String requestLine = input.readLine();                                                              // set request line 
         if (requestLine == null || requestLine.isEmpty()) {
-            return;       // kill thread running
+            return;                                                                                         // kill thread running
         }
         // Header check
         if (requestLine.startsWith("POST /newRoom")) {               
-            //System.out.println("Received new room request...");
             handleNewRoomRequest(input, output);
         } else if (requestLine.startsWith("POST /searchRoom")) {
-            //System.out.println("Received search room request...");
             handleSearchRoomRequest(input, output);
         } else if(requestLine.startsWith("POST /bookRoom")) {
-            //System.out.println("Received book room request...");
             handleBookRoomRequest(input, output);
         } else if(requestLine.startsWith("GET /getBooking")) {
-            //System.out.println("Received get booking request...");
             handleGetBookRequest(input, output);
         } else if(requestLine.startsWith("GET /getAreaBooking")) {
-            //System.out.println("Received get area booking request...");
             handleAreaBookRequest(input, output);
         } else if(requestLine.startsWith("POST /giveReview")) {
-            //System.out.println("Received get booking request...");
             handleNewReviewRequest(input, output); 
         } else {
             sendNotImplementedResponse(output);
@@ -223,10 +219,10 @@ public class Master
                 e.printStackTrace();
             }
             try {
-                socket.close();
+                socket.close();                                                             // close socket
             } catch (IOException e) {
                 e.printStackTrace();
-            }                                                                           // close socket
+            }                                                                              
         }).start();   
         sendHttpResponse(out, 200, "OK",                        // send response for succesfull http request
         "{\"message\":\" " + room.getRoomName() + " added\"}"
@@ -296,7 +292,7 @@ public class Master
             try {
                 // Send response for unsuccesfull http request
                 sendHttpResponse(out, 404, "Not Found", "{\"message\":\"No such room\"}"
-                , "application/json");                  // send response for unsuccessful http request
+                , "application/json");                  
             } catch (IOException e) {
                 e.printStackTrace();
             }                                                    
@@ -334,17 +330,15 @@ public class Master
             } 
             try (BufferedReader inputWorker = new BufferedReader
                                         (new InputStreamReader(socket.getInputStream()))) {
-                sendBookRoomRequest(outputWorker, jsonRoomName);                                   // send request
+                sendBookRoomRequest(outputWorker, jsonRoomName);                                   // send book request
                 // Read the response
                 String responseLine;
                 while ((responseLine = inputWorker.readLine()) != null) {
                     if(responseLine.startsWith("HTTP/1.1 409 Conflict")) {
-                        //System.out.println(responseLine);
                         sendHttpResponse(out, 409, "Conflict", 
                         "{\"message\":\" " + roomName +  " already booked\"}", 
                         "application/json");                                    // send response for unsuccessful http request            
                     } else if(responseLine.startsWith("HTTP/1.1 200 OK")) {
-                        //System.out.println(responseLine);
                         sendHttpResponse(out, 200, "OK", 
                         "{\"message\":\" " + roomName + " booked\"}",
                         "application/json");                                    // send response for successful http request             
@@ -483,7 +477,7 @@ public class Master
             work.start();                                                           // start thread
             work.join();                                                            // call external thread to wait for inside thread to finish
         }
-        if(reducer.isEmpty()) {
+        if(reducer.isEmpty()) {                                                      // checb if anything was found
             try {
                 // Send response for succesfull http request
                 sendHttpResponse(out, 404, "Not Found", 
@@ -699,6 +693,7 @@ public class Master
         private String ipAddress;       // worker's ip address
         private int port;               // worker's port
 
+        @Override
         public String toString() 
         {
             return "Worker: " + workerID + 
@@ -712,6 +707,7 @@ public class Master
         private int nofWorkers;                 // number of workers
         private ArrayList<Worker> workers;      // array of workers
 
+        @Override
         public String toString() {
             return "WorkerConfig: " +
                     "nofWorkers=" + nofWorkers +
