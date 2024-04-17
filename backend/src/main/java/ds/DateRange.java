@@ -25,11 +25,6 @@ public class DateRange
     {
         this.endDate = LocalDate.parse(endDate);                    // parse a given string to local date object
     }
-    // Checks if the given local date object is in range of this date range object
-    public boolean isInRange(LocalDate date) 
-    {
-        return !date.isBefore(startDate) && !date.isAfter(endDate);          
-    }
     // Checks if one date range object is within the range of this date range object
     public boolean isWithinRange(DateRange other) 
     {
