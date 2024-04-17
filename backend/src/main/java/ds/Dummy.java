@@ -47,9 +47,9 @@ public class Dummy extends Thread {
       this.roomName = roomName;
    }
    // Constructor in case of sending a Review object in a rate review
-   Dummy(double stars, String roomName)
+   Dummy(double stars, String roomNameReview)
    {
-      review = new Review(stars, roomName);
+      review = new Review(stars, roomNameReview);
    }
    // Default constructor in case we want to send a Filter object with a menu
    Dummy() throws InterruptedException 
@@ -182,13 +182,12 @@ public class Dummy extends Thread {
          reducer.printRooms();                           // print results
       }
    }
-
    // Sends request for booking a room
    private void book()
    {
       this.run();
    }
-   
+   // Sends request for rating a room
    private void rate()
    {
       this.run();
