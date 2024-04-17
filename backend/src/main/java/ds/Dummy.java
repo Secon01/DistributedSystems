@@ -224,7 +224,7 @@ public class Dummy extends Thread {
          // Read the response
          String responseBody = extractBody(in);
          System.out.println(responseBody);
-      } else if(input.equals("review")) {       // check if input is equal to 'search'
+      } else if(input.equals("rate")) {       // check if input is equal to 'search'
          sendNewReviewRequest(out);                         // send request for booking a room
          // Read the response
          String responseBody = extractBody(in);
@@ -302,11 +302,10 @@ public class Dummy extends Thread {
    public static void main(String[] args) throws IOException, InterruptedException {
       //new Dummy().start(); 
       sc = new Scanner(System.in);
-      System.out.println("Give input");
+      System.out.println("Give input, [search, book, rate]");
       input = sc.nextLine();
       sc.close();
-      if(input .equals("search")) {
-         // Search()
+      if(input .equals("search")) {  // Search()
          for(int i = 0; i < 3; i++) {
             (new Dummy(null, "2024-04-06", "2024-04-07", 0, 0.0, 0)).start(); 
          }
@@ -315,8 +314,7 @@ public class Dummy extends Thread {
          for(Reducer reducer : reducers) {   // for each reducer obejct in reducers arraylist
             reducer.printRooms();            // print results        
          }  
-      } else if (input.equals("book")){
-         // Book()
+      } else if (input.equals("book")){   // Book()
          for(int i = 0; i < 2; i++) {
             new Dummy("Double Room").start();
             /* 
@@ -331,7 +329,7 @@ public class Dummy extends Thread {
             new Dummy("Executive Suite").start();
             */  
          }         
-      } else if(input.equals("review")) {
+      } else if(input.equals("rate")) { // Rate()
             new Dummy(4.2,"Single Room").start();
             new Dummy(3.1,"Luxury Suite 1").start();
             new Dummy(2.6,"Kostas Camping").start();
