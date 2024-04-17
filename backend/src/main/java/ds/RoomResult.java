@@ -12,7 +12,6 @@ public class RoomResult
     {
         this.rooms = new ArrayList<>();            // initialize a new array when the method is called   
     }
-
     // Getters
     public int getId() {
         return id;                                
@@ -20,12 +19,10 @@ public class RoomResult
     public ArrayList<Room> getRooms() {
         return rooms;
     }
-    
     // Setter
     public void setId(int id) {
         this.id = id;
     }
-    
     // Adds room to array
     public  void addRoom(Room room)
     {
