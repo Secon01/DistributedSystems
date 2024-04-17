@@ -8,18 +8,19 @@ import com.google.gson.Gson;
 // Room Class
 public class Room extends Request
 {
-    private String roomName;
-    private int guests;
-    private double price;
-    private double stars;
-    private String area;
-    private int reviews;
-    private String roomImage;
-    private String startDate;
-    private String endDate;
-    private boolean available;
-    private DateRange dateRange;
-    // Constructor
+    private String roomName;                            // room of the name
+    private int guests;                                 // number of guests
+    private double price;                               // price
+    private double stars;                               // average valye of stars
+    private String area;                                // area
+    private int reviews;                                // number of reviews 
+    private String roomImage;                           // room image ( will be shown in part b )
+    private String startDate;                           // starting date of eligible booking
+    private String endDate;                             // ending date of eligible booking
+    private boolean available;                          // flag of availability
+    private DateRange dateRange;                        // daterange
+    
+    // Constructor for when starting date and ending date are given 
     Room(int id, String name, int guests, double price, double stars,
             String area, int reviews, String image, String startDate, String endDate, boolean available)
     {
@@ -38,6 +39,7 @@ public class Room extends Request
         this.dateRange.setStartDate(startDate);
         this.dateRange.setEndDate(endDate);
     }
+    
     // Constructor for null values of start & end dates
     // because of LocalDate parse() method
     Room(int id, String name, int guests, double price, double stars,
@@ -57,6 +59,7 @@ public class Room extends Request
     Room()
     {
     }
+    
     // Getters
     public DateRange getDateRange() {
         return dateRange;
@@ -102,6 +105,7 @@ public class Room extends Request
     {
         return available;
     }
+    
     // Setters
     public void setRoomName(String roomName) {
         this.roomName = roomName;
@@ -148,7 +152,8 @@ public class Room extends Request
         this.dateRange.setStartDate(startDate);
         this.dateRange.setEndDate(endDate);
     }
-    // Computes how many non null or 0 values does this object has
+    
+    // Computes how many non null or non 0 values does this object has
     public int numNonZero()
     {
         int count = 0;
@@ -162,10 +167,10 @@ public class Room extends Request
                     if(dateRange.getStartDate() == null || dateRange.getEndDate() == null) {    // if start date or end date is null  
                         continue;
                     } else {
-                        count++;
+                        count++;                                                                // increase count  
                     }
-                } else if(value != null && !value.equals(0) && !value.equals(0.0)) {
-                    count++;
+                } else if(value != null && !value.equals(0) && !value.equals(0.0)) {            // if value is not null/0/0.0 
+                    count++;                                                                    // increase count
                 }
             } catch (IllegalAccessException e) {
                 e.printStackTrace();
@@ -178,14 +183,15 @@ public class Room extends Request
     public Room copy()
     {
         if(this.startDate == null || this.endDate == null) {
-            return new Room(this.getManagerID(), this.roomName, this.guests, this.price, 
+            return new Room(this.getManagerID(), this.roomName, this.guests, this.price,                            // for rooms where dates are not given yet
             this.stars, this.area, this.reviews, this.roomImage, this.available);
         } else {
             return new Room(this.getManagerID(), this.roomName, this.guests, this.price, 
-            this.stars, this.area, this.reviews, this.roomImage, this.startDate, this.endDate, this.available);
+            this.stars, this.area, this.reviews, this.roomImage, this.startDate, this.endDate, this.available);     // for rooms where dates are given
         }
     }
 
+    // Prints Room obj's propertires as a string
     public String toString()
     {
         return "Name: " + this.roomName + "\n" +
