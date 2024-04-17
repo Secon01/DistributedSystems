@@ -105,7 +105,7 @@ public class ConsoleApp3 extends Thread {
                 System.out.println("Enter the path of your JSON file: ");
                 String filePath = inp.nextLine();
                 try {
-                    String jsonString = JsonUtils.readFileToString(filePath); // convert file path of json to string
+                    String jsonString = readFileToString(filePath); // convert file path of json to string
                     if (jsonString != null) {
                         Room room = deserializeRoom(jsonString);    // create room object from given json
                         //System.out.println("Main Information JSON File :\n" + jsonString);
@@ -191,10 +191,8 @@ public class ConsoleApp3 extends Thread {
     }
 
     // Info chunck
-    public static class JsonUtils {
-        public static String readFileToString(String filePath) throws IOException {
-            return new String(Files.readAllBytes(Paths.get(filePath)));
-        }
+    public String readFileToString(String filePath) throws IOException {
+        return new String(Files.readAllBytes(Paths.get(filePath)));
     }
 
     // Deserialize json to reducer object  
