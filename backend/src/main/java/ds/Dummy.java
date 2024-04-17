@@ -1,8 +1,6 @@
 // Dummy App for users
 // Communication protocol is based on HTTP
 package ds;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -16,26 +14,25 @@ import java.util.regex.Pattern;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-public class Dummy extends Thread {
-   private boolean exit;
-   private static Scanner sc;
-   private Filter filter;
-   private static String hostname = "localhost";
-   private static int port = 8000;
-   static String[] inputArgs;
-   public static String input;
+public class Dummy extends Thread {                      
+   private static String hostname = "localhost";            // hostname ip address
+   private static int port = 8000;                          // port instance  
+   private static String input;                             // input instance
+   private static ArrayList<Reducer> reducers;              // array for reducer objects
+   private Scanner sc;                                      // scanner instance
+   private Filter filter;                                   // filter object instance
    private String roomName;                                 // room name for booking
    private String roomNameReview;                           // room name for review
-   private double rating;
+   private double rating;                                   // rating instance
    private Review review;                                   // review object that we are going to send
    private String regex = "\\d{4}-\\d{2}-\\d{2}";           // regular expression to match the format YYYY-MM-DD
-   private static ArrayList<Reducer> reducers;
 
    // Constructor in case of sending a Filter object in a search request
-   Dummy(String area, String startDate, String endDate, int guests, double price, int stars) {
+   Dummy(String area, String startDate, String endDate, int guests, double price, int stars) 
+   {
       this.filter = new Filter();
       this.filter.setArea(area);
-      if(startDate != null && endDate != null) {
+      if(startDate != null && endDate != null) {         // if date ramge isn't [null, null]
          this.filter.setDate(startDate, endDate);
       }
       this.filter.setGuests(guests);
@@ -81,7 +78,7 @@ public class Dummy extends Thread {
    // Run the menu 
    public void runMenu() throws InterruptedException {
       this.header();
-      while(!this.exit) {
+      while(true) {
          this.menu();
          int choice = this.getInput();
          this.performAction(choice);
@@ -125,11 +122,11 @@ public class Dummy extends Thread {
                } else {
                   System.out.println("Invalid date format. Please enter date in YYYY-MM-DD format!");
                }                                                                        
-            }  
+            } 
             System.out.println("Enter your ending date");
             while (true) {
                Scanner end = new Scanner(System.in);
-               String endDate = end.nextLine();                            
+               String endDate = end.nextLine();      
                if (Pattern.matches(regex, endDate)) {            // check if regular expression of date format matches user's input
                   this.filter.setDate(startDate, endDate);
                   break;
@@ -321,10 +318,9 @@ public class Dummy extends Thread {
    public static void main(String[] args) throws IOException, InterruptedException {
       new Dummy().start(); 
       /*  
-      sc = new Scanner(System.in);
+      Scanner scan = new Scanner(System.in);
       System.out.println("Give input: [search, book, rate]");
-      input = sc.nextLine();
-      sc.close();
+      input = scan.nextLine();
       if(input .equals("search")) {  // Search()
          for(int i = 0; i < 1; i++) {
             (new Dummy("Larisa", "2024-04-06", "2024-04-13", 0, 0.0, 0)).start(); 
@@ -353,6 +349,7 @@ public class Dummy extends Thread {
             new Dummy(3.1,"Luxury Suite 1").start();
             new Dummy(2.6,"Kostas Camping").start();
       }
+      scan.close();
       */
    }  
 }

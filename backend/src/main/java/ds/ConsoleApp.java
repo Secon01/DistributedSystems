@@ -16,19 +16,19 @@ import org.eclipse.collections.api.bag.MutableBag;
 import org.eclipse.collections.impl.factory.Bags;
 
 public class ConsoleApp extends Thread {
-    private Scanner value1;
-    private Scanner value2;
-    private Scanner inp;
-    private String endDate;
-    private String startDate;
-    private String finalJSONString;
+    private Scanner value1;                             // scanner for start date                
+    private Scanner value2;                             // scanner for end date 
+    private Scanner inp;                                // scanner for input
+    private String endDate;                             // start date instance
+    private String startDate;                           // end date instance
+    private String finalJSONString;                     // finale json string instance
     private int managerID;                              // manager's personal ID instance
     private Room room;                                  // room object instance
     private String regex = "\\d{4}-\\d{2}-\\d{2}";      // regular expression to match the format YYYY-MM-DD
-    private static String hostname = "localhost";       
-    private static int port = 8000;
-    private static String input;
-    private static ArrayList<Reducer> reducers;
+    private static String hostname = "localhost";       // hostname adress
+    private static int port = 8000;                     // port
+    private static String input;                        // input instance
+    private static ArrayList<Reducer> reducers;         // array for recucer objects
     // Constructor for add room function 
     ConsoleApp(Room room) throws IOException
     {
@@ -187,12 +187,10 @@ public class ConsoleApp extends Thread {
                 break;
         }
     }
-
     // Info chunck
     public String readFileToString(String filePath) throws IOException {
         return new String(Files.readAllBytes(Paths.get(filePath)));
     }
-
     // Deserialize json to reducer object  
     private Reducer deserializeReducer(String json)
     {
@@ -201,13 +199,11 @@ public class ConsoleApp extends Thread {
             .create();
         return gson.fromJson(json, Reducer.class);
     }
-
     // Serialize manager's personal ID
     private String serializeManagerID(int mID)
     {
         return new Gson().toJson(mID);
     }
-
     // Serializes room object to a json 
     private String serializeRoom(Room room)
     {
@@ -224,7 +220,6 @@ public class ConsoleApp extends Thread {
             .create();
         return gson.fromJson(json, Room.class);
     }    
-     
     @Override
     public void run() 
     {
@@ -309,7 +304,6 @@ public class ConsoleApp extends Thread {
         }
         return requestBody.toString();
     }
-
     // Send request to add a new room 
     private void sendPostNewRoomRequest(PrintWriter out, String jsonBody) {
         out.println("POST /newRoom HTTP/1.1");
@@ -343,7 +337,7 @@ public class ConsoleApp extends Thread {
         out.println(jsonBody);
     }
     public static void main(String[] args) throws IOException, InterruptedException {
-        //new ConsoleApp().start();
+        new ConsoleApp().start();       // start thread for console app             
         /* 
         Scanner sc = new Scanner(System.in);
         System.out.println("Give input");

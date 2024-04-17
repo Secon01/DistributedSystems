@@ -15,7 +15,6 @@ public class Review extends Request {
         this.reviewStars=rev;
         this.roomForReview=room;
     }
-    
     // Setters
     public void setReview(double r){
         this.reviewStars = r;
@@ -53,4 +52,3 @@ public class Review extends Request {
         return "[" + this.reviewStars + ", " + this.roomForReview + "]";
     }
 }
-

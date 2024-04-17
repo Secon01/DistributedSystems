@@ -44,24 +44,12 @@ public class Worker
     {
         this.rooms = new ArrayList<>();
     }
-    // Rooms array getter
-    private ArrayList<Room> getRooms() 
-    {
-        return rooms;
-    }
     // Adds room in rooms array
     private void addRoom(Room room)
     {
         synchronized(room) {
             rooms.add(room);
         }   
-    }
-    // Prints rooms of worker's array
-    private void printRooms()
-    {
-        for(Room room : rooms) {
-            System.out.println(room.toString() + "\n" + "Index: " + rooms.indexOf(room));
-        }
     }
     // Deserializes json file to a filter object
     private Filter deserializeFilter(String json)
@@ -88,17 +76,6 @@ public class Worker
         String jsonResults = gson.toJson(resRooms);
         return jsonResults;
     }
-    // Deserializes json file to an integer (manager ID)
-    private int deserializeManagerID(String json)
-    {
-        return new Gson().fromJson(json, Integer.class);
-    }
-    // Serializes request object to json 
-    private String serializeRequest(Request request)
-    {
-        return new Gson().toJson(request);
-    }
-
     // Deserializes json to request object 
     private Request deserializeRequest(String json)
     {
@@ -110,15 +87,12 @@ public class Worker
         return new Gson().fromJson(jsonString, Review.class);
 
     }    
-
     // Checking if worker has a room according to the incoming filter
     // and returns array with indexes of rooms found
     private ArrayList<Integer> hasRoom(Filter filter) throws InterruptedException
     {   // Double flag 
         boolean result = false;            
-        //boolean finalResult = false;
         ArrayList<Integer> indexes = new ArrayList<>();                    // array to collect room indexes of rooms found
-        //System.out.println(filter.numNonZero());
         if (filter.numNonZero() == 0)                // if Filter object has only null or 0 values on properties
         {
             return indexes;
@@ -145,7 +119,7 @@ public class Worker
                     fieldR.setAccessible(true);
                     Object valueF = fieldF.get(filter);
                     Object valueR = fieldR.get(room);
-                    if(valueF.getClass() == DateRange.class) {
+                    if(valueF != null && valueF.getClass() == DateRange.class) {
                         if(((DateRange) valueF).getStartDate() == null || ((DateRange) valueF).getEndDate() == null) {    // special check for DateRanges to ignore if null
                             continue;
                         }
@@ -185,7 +159,7 @@ public class Worker
                 results.setId(filter.getId());                      // set id of the selected room equal to filter's id        
             }
         } else {
-            results.setId(filter.getId());                      // set id of the selected room equal to filter's id                    
+            results.setId(filter.getId());                          // set id of the selected room equal to filter's id                    
             return results;
         }
         return results;
@@ -202,12 +176,9 @@ public class Worker
                     } else {
                         booked = false;                                                          // set flag to false
                     }    
-            
             }    
-        
         return booked;                                                                          // return flag
     }
-
     // Checks if a room with a matching manager id is booked
     // and returns indexes array with idexes of rooms found
     private ArrayList<Integer> isBooked(int managerID)
@@ -254,7 +225,6 @@ public class Worker
     // Gives reviews
     private synchronized boolean giveReview(Review review) {
         boolean roomFound = false;
-        //System.out.println(review.getRoomForReview());
         for (Room room : rooms) {
             if (room.getRoomName().equals(review.getRoomForReview())) {         // find the room which has the given name
                 int numberof = room.getReviews() + 1;                           // increase no of reviews
@@ -267,7 +237,6 @@ public class Worker
         }
         return roomFound;                                                       // return the status of finding the room
     }
-
     // Opens worker's server side
     private void runServer(Socket connection) throws IOException, InterruptedException
     {
@@ -296,7 +265,6 @@ public class Worker
         consumeRemainingRequest(input);
         connection.close();                                                                                 // close socket    
 	}
-
     // Handles requests for new room insertion
     private void handleNewRoomRequest(BufferedReader in, OutputStream out) throws IOException {
         String jsonRoom = extractBody(in);                                                                  // extract json from request body

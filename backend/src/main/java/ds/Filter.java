@@ -1,7 +1,6 @@
 package ds;
 import java.lang.reflect.Field;
 
-
 // Filters holder
 public class Filter extends Request
 {

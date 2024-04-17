@@ -1,8 +1,6 @@
 // Master class
 // Communication protocol is based on HTTP 
 package ds;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -50,10 +48,8 @@ public class Master
     // Sets unique id to each request with filter and to reducer's id
     private void setRequestIDFilter(Filter filter, Reducer reducer)
     {
-        //synchronized(req) {
-            filter.setId(getUniqueNumber());
-            reducer.setCurrentID(filter.getId());
-        //}
+        filter.setId(getUniqueNumber());
+        reducer.setCurrentID(filter.getId());
     }
     // Sets unique id to each request with room and to reducer's id
     private void setRequestIDRoom(Room room, Reducer reducer)
@@ -61,14 +57,12 @@ public class Master
         room.setId(getUniqueNumber());          
         reducer.setCurrentID(room.getId());
     }
-
     // Sets unique id to each request with rooms
     private void setUniqueBookingID(Request req, Reducer reducer)
     {
         req.setId(getUniqueNumber());
         reducer.setCurrentID(req.getId());
     }
-
     // Hash function 
     private static int hashFunc(String roomName, int numOfWorkers) {
         int hashCode = roomName.hashCode();                         // hashing room's name
@@ -77,7 +71,7 @@ public class Master
         nodeID++;                                                   // starting from 1 to number of nodes
         return nodeID;
     }
-
+    // Serializers, Deserializes
     // Deserializes json to a filter object
     private Filter deserializeFilter(String json)
     {
@@ -86,7 +80,6 @@ public class Master
             .create();
         return gson.fromJson(json, Filter.class);
     }
-
     // Deserializes json to a room object
     private Room deserializeRoom(String json)
     {
@@ -103,7 +96,6 @@ public class Master
             .create();
         return gson.toJson(room);
     }    
-
     // Serializes filter object to json 
     private String serializeFilter(Filter filter)
     {
@@ -112,7 +104,6 @@ public class Master
             .create();
         return gson.toJson(filter);
     }
-
     // Deserialize json to results  
     private RoomResult deserializeResults(String json)
     {
@@ -121,7 +112,6 @@ public class Master
         .create();
         return gson.fromJson(json, RoomResult.class);
     }
-
     // Serializes reducer object to json 
     private String serializeReducer(Reducer reducer)
     {
@@ -130,25 +120,21 @@ public class Master
             .create();
         return gson.toJson(reducer);
     }
-
     // Deserializes json file to an integer (manager ID)
     private int deserializeManagerID(String json)
     {
         return new Gson().fromJson(json, Integer.class);
     }
-
     // Serializes request object to json 
     private String serializeRequest(Request request)
     {
         return new Gson().toJson(request);
     }
-
     // Opens master's server side
     private void runServer(Socket connection) throws IOException, InterruptedException
     {
         BufferedReader input = new BufferedReader(new InputStreamReader(connection.getInputStream()));      // get input stream in buffered reader
         OutputStream output = connection.getOutputStream();                                                 // get output stream from master's socket
-
         String requestLine = input.readLine();                                                              // set request line 
         if (requestLine == null || requestLine.isEmpty()) {
             return;                                                                                         // kill thread running
@@ -306,7 +292,6 @@ public class Master
             }                                                    
         }
     }
-
     // Handles requests for booking room
     private void handleBookRoomRequest(BufferedReader in, OutputStream out) throws IOException, InterruptedException 
     {
@@ -356,7 +341,6 @@ public class Master
         book.start();
         book.join();
     }
-    
     private void handleNewReviewRequest(BufferedReader in, OutputStream out) throws IOException, InterruptedException {
         String jsonReview = extractBody(in);                                            // extract json from request body
         Review review = new Gson().fromJson(jsonReview, Review.class);         // create filter object from json 
@@ -575,7 +559,6 @@ public class Master
             }                                                    
         }
     }
-
     // Sends http request for searching a room to worker
     private static void sendSearchRoomRequest(PrintWriter out, String jsonBody) {
         out.println("POST /searchRoom HTTP/1.1");
@@ -586,7 +569,6 @@ public class Master
         out.println();
         out.println(jsonBody);
     }
-
     // Sends http request for adding a room to worker
     private static void sendNewRoomRequest(PrintWriter out, String jsonBody) {
         out.println("POST /newRoom HTTP/1.1");
@@ -597,7 +579,6 @@ public class Master
         out.println();
         out.println(jsonBody);
     }
-
     // Sends http request for booking a room to worker
     private static void sendBookRoomRequest(PrintWriter out, String jsonBody) {
         out.println("POST /bookRoom HTTP/1.1");
@@ -608,7 +589,6 @@ public class Master
         out.println();
         out.println(jsonBody);
     }
-
     private void sendNewReviewRequest (PrintWriter out, String jsonBody){
         out.println("POST /giveReview HTTP/1.1");
         out.println("Host: localhost");
@@ -638,12 +618,10 @@ public class Master
         out.println();
         out.println(jsonBody);
     }
-
     // Sends error message when the server is incapable of performing the request
     private static void sendNotImplementedResponse(OutputStream out) throws IOException {
         sendHttpResponse(out, 501, "Not Implemented", "", "text/plain");
     }
-
     // Builds and sends the http response
     private static void sendHttpResponse(OutputStream out, int statusCode, String statusMessage, String body, String contentType) throws IOException {
         String httpResponse = String.format("HTTP/1.1 %d %s\r\nContent-Type: %s\r\nContent-Length: %d\r\n\r\n%s", statusCode, statusMessage, 
@@ -651,7 +629,6 @@ public class Master
         //System.out.println(httpResponse);   
         out.write(httpResponse.getBytes());
     }
-
     // Clear buffer in case anything is left
     private static void consumeRemainingRequest(BufferedReader in) throws IOException {
         while (in.ready()) {                                                            
@@ -679,13 +656,11 @@ public class Master
         }
         return requestBody.toString();
     }
-
+    // Reads filepath and creates json string
     public static String readFileToString(String filePath) throws IOException 
     {
         return new String(Files.readAllBytes(Paths.get(filePath)));
     }
-
-
     // Inner class worker
     private class Worker
     {

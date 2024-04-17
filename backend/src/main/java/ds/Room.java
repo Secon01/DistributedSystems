@@ -58,7 +58,6 @@ public class Room extends Request
     Room()
     {
     }
-    
     // Getters
     public DateRange getDateRange() {
         return dateRange;
@@ -133,7 +132,6 @@ public class Room extends Request
         this.dateRange.setStartDate(startDate);
         this.dateRange.setEndDate(endDate);
     }
-    
     // Computes how many non null or non 0 values does this object has
     public int numNonZero()
     {
@@ -185,13 +183,5 @@ public class Room extends Request
                "Available: " + this.available + "\n" +
                "Start date: " + this.startDate + "\n" +
                "End date: " + this.endDate;
-    }
-
-    public static void main(String[] args) {
-        UUID id = UUID.randomUUID();
-        //System.out.println(id);
-
-        String json = new Gson().toJson(id);
-        System.out.println(json);
     }
 }
