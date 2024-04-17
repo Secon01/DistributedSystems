@@ -1,7 +1,8 @@
 // Dummy App for users
 // Communication protocol is based on HTTP
 package ds;
-
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -13,8 +14,6 @@ import java.util.Collections;
 import java.util.Scanner;
 import java.util.regex.Pattern;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 public class Dummy extends Thread {
    private boolean exit;
@@ -25,7 +24,7 @@ public class Dummy extends Thread {
    static String[] inputArgs;
    public static String input;
    private String roomName;                                 // room name for booking
-   private String roomNameReview;
+   private String roomNameReview;                           // room name for review
    private double rating;
    private Review review;                                   // review object that we are going to send
    private String regex = "\\d{4}-\\d{2}-\\d{2}";           // regular expression to match the format YYYY-MM-DD
@@ -148,8 +147,9 @@ public class Dummy extends Thread {
             break;
          case 5:
             System.out.println("Enter a number of stars");
-            this.filter.setStars(Integer.parseInt(this.sc.nextLine()));       // get input and parse it to make it the right type         
-         case 6:
+            this.filter.setStars(Integer.parseInt(this.sc.nextLine())); 
+            break;                                                            // get input and parse it to make it the right type         
+         case 6: 
             input = "search";   
             search();                                                          // run via search () 
             break;
@@ -216,6 +216,7 @@ public class Dummy extends Thread {
         return gson.fromJson(json, Reducer.class);
     }
 
+   @Override
    public void run() 
    {
       Socket socket = null;
@@ -226,11 +227,11 @@ public class Dummy extends Thread {
       }
       try (PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
          BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
-      if (input.equals("search")) {                                    // check if input is equal to 'search' 
+      if (input.equals("search")) {                           // check if input is equal to 'search' 
          reducers = new ArrayList<>();                                 // array list with reducer objects for printing
          sendSearchRoomRequest(out);                                   // send request for searching a room
          String json = extractBody(in);                                // extract json from http request body
-         if(json.startsWith("{\"message\"")) {                         // if json string is null 
+         if(json.startsWith("{\"message\"")) {                  // if json string is null 
             System.out.println(json);                                  // print the appropriate message 
             return;
          } else {
@@ -240,12 +241,12 @@ public class Dummy extends Thread {
             }   
          }
       }  else if(input.equals("book")) {                             // check if input is equal to 'book'
-         sendBookRoomRequest(out);                                   // send request for booking a room
-         String responseBody = extractBody(in);                      // read response
+         sendBookRoomRequest(out);                                            // send request for booking a room
+         String responseBody = extractBody(in);                               // read response
          System.out.println("\n" + responseBody);                     
       } else if(input.equals("rate")) {                              // check if input is equal to 'rate'
-         sendNewReviewRequest(out);                                  // send request for rating a room
-         String responseBody = extractBody(in);                      // read response
+         sendNewReviewRequest(out);                                           // send request for rating a room
+         String responseBody = extractBody(in);                               // read response
          System.out.println("\n" + responseBody);
       }
       else {
@@ -318,7 +319,7 @@ public class Dummy extends Thread {
    }
    public static void main(String[] args) throws IOException, InterruptedException {
       new Dummy().start(); 
-      /* 
+      /*  
       sc = new Scanner(System.in);
       System.out.println("Give input: [search, book, rate]");
       input = sc.nextLine();
