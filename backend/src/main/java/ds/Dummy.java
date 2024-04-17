@@ -26,6 +26,7 @@ public class Dummy extends Thread {
    public static String input;
    private String roomName;                                 // room name for booking
    private String roomNameReview;
+   private double rating;
    private Review review;                                   // review object that we are going to send
    private String regex = "\\d{4}-\\d{2}-\\d{2}";           // regular expression to match the format YYYY-MM-DD
    private static ArrayList<Reducer> reducers;
@@ -55,7 +56,7 @@ public class Dummy extends Thread {
    Dummy() throws InterruptedException 
    {
       this.filter = new Filter();
-      //runMenu();
+      runMenu();
    }
    // Print the Header of the menu
    public void header() {
@@ -163,6 +164,11 @@ public class Dummy extends Thread {
             Scanner rn2 = new Scanner(System.in);
             System.out.println("Type the name of the room you wish to rate");
             roomNameReview = rn2.nextLine();
+            System.out.println("Rate room from 0 to 5 and press enter to proceed");
+            rating = Double.parseDouble(rn2.nextLine());
+            review = new Review();
+            review.setRoomForReview(roomNameReview);
+            review.setReview(rating);
             input = "rate";
             rate();
             break ; 
@@ -174,7 +180,7 @@ public class Dummy extends Thread {
    // Sends filter to master and prints results
    private void search() throws InterruptedException
    {
-      ArrayList<Reducer> reducers = new ArrayList<>();   // array list with reducer objects for printing
+      reducers = new ArrayList<>();   // array list with reducer objects for printing
       this.run();                                        // create request thread and send it to master
       Thread.sleep(1000);
       Collections.sort(reducers);                        // sort reducers array list based on current id
@@ -311,7 +317,8 @@ public class Dummy extends Thread {
       out.println(jsonBody);
    }
    public static void main(String[] args) throws IOException, InterruptedException {
-      //new Dummy().start(); 
+      new Dummy().start(); 
+      /* 
       sc = new Scanner(System.in);
       System.out.println("Give input: [search, book, rate]");
       input = sc.nextLine();
@@ -328,7 +335,6 @@ public class Dummy extends Thread {
       } else if (input.equals("book")){   // Book()
          for(int i = 0; i < 2; i++) {
             new Dummy("HotelPoseidon").start();
-            /* 
             new Dummy("Double Room").start();
             new Dummy("Single Room").start();
             new Dummy("Family Room").start();
@@ -339,12 +345,12 @@ public class Dummy extends Thread {
             new Dummy("Penthouse").start();
             new Dummy("Standard Room").start();
             new Dummy("Executive Suite").start();
-            */  
          }         
       } else if(input.equals("rate")) { // Rate()
             new Dummy(4.2,"Single Room").start();
             new Dummy(3.1,"Luxury Suite 1").start();
             new Dummy(2.6,"Kostas Camping").start();
       }
+      */
    }  
 }
