@@ -53,3 +53,4 @@ public class Review extends Request {
         return "[" + this.reviewStars + ", " + this.roomForReview + "]";
     }
 }
+
