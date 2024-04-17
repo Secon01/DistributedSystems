@@ -345,7 +345,8 @@ public class Worker
         String jsonFilter = extractBody(in);                                                                // extract json from request body
         Filter filter = deserializeFilter(jsonFilter);                                                      // create filter object from json input file
         System.out.println("Received request: " + filter.getId() + " with " 
-                        + filter.toString() + " is Thread: " + Thread.currentThread().threadId());
+                        + filter.toString() + " is Thread: " 
+                        + Thread.currentThread().threadId() + "\n");
         RoomResult resultRooms = map(hasRoom(filter), filter);                                              // get array with results for reducer
         String jsonResults = serializeResults(resultRooms);                                                 // serialize results to json
         if (!resultRooms.getRooms().isEmpty()) {                                                            // if json with results is not empty

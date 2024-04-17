@@ -194,8 +194,9 @@ public class Master
     private void handleNewRoomRequest(BufferedReader in, OutputStream out) throws IOException {
         String jsonRoom = extractBody(in);                                              // extract json from request body
         Room room = deserializeRoom(jsonRoom);                                          // get room object from json
-        System.out.println("\n" + "Received request --> Thread: " + Thread.currentThread().threadId()
-                            + " with: " +  room.getRoomName());
+        System.out.println("\n" + "Received request for adding room:" 
+                                +  room.getRoomName()  
+                                + ", Thread: " + Thread.currentThread().threadId());
         // Client side of master                                    
         int workerID = hashFunc(room.getRoomName(), workerConfig.nofWorkers);           // hash room name and get worker id to send request  
         int workerPort = getPort(workerID);                                             // get port of selected worker
@@ -217,7 +218,7 @@ public class Master
                 sendNewRoomRequest(output, jsonRoom);                                   // send request
                 // Read the response
                 String responseLine = extractBody(inputWorker);
-                System.out.println(responseLine);                                   // print response message
+                System.out.println("\n" + responseLine);                                   // print response message
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -238,8 +239,9 @@ public class Master
         Filter filter = deserializeFilter(jsonFilter);                              // create filter object from json 
         setRequestIDFilter(filter, reducer);                                     // set a unique id to filter and reducer object
         jsonFilter = serializeFilter(filter);                                       // convert filter object back to json
-        System.out.println("Received request: " + filter.getId() + 
-                            " with " + filter.toString() + " is Thread: " + Thread.currentThread().threadId());
+        System.out.println("\n" + "Received request "+ filter.getId() + " with filter: \n" 
+                                +  filter.toString()  
+                                + ", Thread: " + Thread.currentThread().threadId());
         // Client side of master                            
         final String json = jsonFilter;                                     // make it final because of try/catch
         for(Worker worker : workerConfig.workers) {                         // for each worker configured
@@ -314,7 +316,7 @@ public class Master
     {
         String jsonRoomName = extractBody(in);                                            // extract json with room name from request body
         String roomName = new Gson().fromJson(jsonRoomName, String.class);       // create string with room name from json
-        System.out.println("Received book for " + roomName);
+        System.out.println("\n" + "Received book request for room: " + roomName);
         int workerID = hashFunc(roomName, workerConfig.nofWorkers);                     // hash room name and get worker id to send request  
         int workerPort = getPort(workerID);                                             // get port of selected worker
         Thread book  = new Thread(() -> {
@@ -360,11 +362,13 @@ public class Master
         book.start();
         book.join();
     }
-
+    
     private void handleNewReviewRequest(BufferedReader in, OutputStream out) throws IOException, InterruptedException {
         String jsonReview = extractBody(in);                                            // extract json from request body
         Review review = new Gson().fromJson(jsonReview, Review.class);         // create filter object from json 
-        System.out.println("Received request: " + " with " + review.toString() + " is Thread: " + Thread.currentThread().threadId());
+        System.out.println("\n" + "Received request with review: \n" 
+                                +  review.toString()  
+                                + ", Thread: " + Thread.currentThread().threadId());
         final String json = jsonReview;     // make it final to work
         // Client side of master
         int workerID = hashFunc(review.getRoomForReview(), workerConfig.nofWorkers);           // hash room name and get worker id to send request  
@@ -431,6 +435,9 @@ public class Master
         String jsonRequest = serializeRequest(request);                             // create json from request object
         System.out.println("Received request: " + request.getId() + " is Thread: " + Thread.currentThread().threadId()
                             + " with: " + "\n" + "Manager ID: " + request.getManagerID());
+        System.out.println("\n" + "Received request "+ request.getId() 
+                                + " with manager ID: "+ managerID + "\n" 
+                                + ", Thread: " + Thread.currentThread().threadId());
         for(Worker worker : workerConfig.workers) {                                 // for each worker configured
             Thread work = new Thread(() -> { 
                 Socket socket = null;
