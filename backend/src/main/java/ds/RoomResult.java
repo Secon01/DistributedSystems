@@ -17,22 +17,20 @@ public class RoomResult
     public int getId() {
         return id;                                
     }
-
     public ArrayList<Room> getRooms() {
         return rooms;
     }
-
+    
     // Setter
     public void setId(int id) {
         this.id = id;
     }
-
+    
     // Adds room to array
     public  void addRoom(Room room)
     {
         rooms.add(room);
     }
-
     // Prints rooms of rooms array
     public void printRooms()
     {
