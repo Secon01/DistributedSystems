@@ -5,17 +5,17 @@
         {
             "workerID" : 1,
             "ipAddress":"localhost",
-            "port":8001
+            "port":8002
         },
         {
             "workerID" : 2,
             "ipAddress":"localhost",
-            "port":8002
+            "port":8003
         },
         {
             "workerID" : 3,
             "ipAddress":"localhost",
-            "port":8003
+            "port":8004
         } 
     ]
 }

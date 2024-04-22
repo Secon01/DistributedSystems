@@ -45,23 +45,11 @@ public class Master
     private synchronized int getUniqueNumber() {
         return requestID++;                                           
     }
-    // Sets unique id to each request with filter and to reducer's id
-    private void setRequestIDFilter(Filter filter, Reducer reducer)
+    // Sets unique id to request 
+    private void setUniqueID(Request request, Reducer reducer)
     {
-        filter.setId(getUniqueNumber());
-        reducer.setCurrentID(filter.getId());
-    }
-    // Sets unique id to each request with room and to reducer's id
-    private void setRequestIDRoom(Room room, Reducer reducer)
-    {
-        room.setId(getUniqueNumber());          
-        reducer.setCurrentID(room.getId());
-    }
-    // Sets unique id to each request with rooms
-    private void setUniqueBookingID(Request req, Reducer reducer)
-    {
-        req.setId(getUniqueNumber());
-        reducer.setCurrentID(req.getId());
+        request.setId(getUniqueNumber());
+        reducer.setCurrentID(request.getId());
     }
     // Hash function 
     private static int hashFunc(String roomName, int numOfWorkers) {
@@ -219,7 +207,7 @@ public class Master
         Reducer reducer = new Reducer();                                            // create reducer object
         String jsonFilter = extractBody(in);                                        // extract json from http request body
         Filter filter = deserializeFilter(jsonFilter);                              // create filter object from json 
-        setRequestIDFilter(filter, reducer);                                     // set a unique id to filter and reducer object
+        setUniqueID(filter, reducer);                                               // set a unique id to filter and reducer object
         jsonFilter = serializeFilter(filter);                                       // convert filter object back to json
         System.out.println("\n" + "Received request "+ filter.getId() + " with filter: \n" 
                                 +  filter.toString()  
@@ -408,7 +396,7 @@ public class Master
         int managerID = deserializeManagerID(jsonMangerID);                         // get manager ID from json 
         Request request = new Request();                                            // create request object
         request.setManagerID(managerID);                                            // set manager ID field of request object
-        setUniqueBookingID(request, reducer);                                       // set unique ID to request and reducer object 
+        setUniqueID(request, reducer);                                              // set unique ID to request and reducer object 
         String jsonRequest = serializeRequest(request);                             // create json from request object
         System.out.println("\n" + "Received request "+ request.getId() 
                                 + " with manager ID: "+ managerID 
@@ -486,7 +474,7 @@ public class Master
         Reducer reducer = new Reducer();                                            // create reducer object
         String jsonRoom = extractBody(in);                                          // extract json of room with given data range from http request body
         Room room = deserializeRoom(jsonRoom);                                      // get room object from json 
-        setRequestIDRoom(room, reducer);                                            // set unique ID to room and reducer object
+        setUniqueID(room, reducer);                                            // set unique ID to room and reducer object
         String jsonDataRange = serializeRoom(room);                                 // create json of room with given data range from room object
         System.out.println("\nReceived request: " + room.getId() + " with:"  
                             + " \n" + "Date range: " + room.getDateRange() 
@@ -560,7 +548,7 @@ public class Master
         }
     }
     // Sends http request for searching a room to worker
-    private static void sendSearchRoomRequest(PrintWriter out, String jsonBody) {
+    private void sendSearchRoomRequest(PrintWriter out, String jsonBody) {
         out.println("POST /searchRoom HTTP/1.1");
         out.println("Host: localhost");
         out.println("Content-Type: application/json");
@@ -570,7 +558,7 @@ public class Master
         out.println(jsonBody);
     }
     // Sends http request for adding a room to worker
-    private static void sendNewRoomRequest(PrintWriter out, String jsonBody) {
+    private void sendNewRoomRequest(PrintWriter out, String jsonBody) {
         out.println("POST /newRoom HTTP/1.1");
         out.println("Host: localhost");
         out.println("Content-Type: application/json");
@@ -580,7 +568,7 @@ public class Master
         out.println(jsonBody);
     }
     // Sends http request for booking a room to worker
-    private static void sendBookRoomRequest(PrintWriter out, String jsonBody) {
+    private void sendBookRoomRequest(PrintWriter out, String jsonBody) {
         out.println("POST /bookRoom HTTP/1.1");
         out.println("Host: localhost");
         out.println("Content-Type: application/json");

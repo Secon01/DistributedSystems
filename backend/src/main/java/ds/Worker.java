@@ -7,6 +7,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.lang.reflect.Field;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -19,7 +20,8 @@ public class Worker
     private ArrayList<Room> rooms;                                                      // rooms array
     private String[] propertyNames = {"area", "dateRange", "guests", "price", "stars"}; // array with common properties of Room and Filter 
     private static ServerSocket serverSocket;                                           // server socket 
-
+    private static String hostname = "localhost";                                       // host name       
+    private static int reducerPort = 8001;
     // Default constructor
     Worker(int port) throws IOException
     {                              
@@ -283,6 +285,21 @@ public class Worker
                                 + ", Thread: " + Thread.currentThread().threadId());
         RoomResult resultRooms = map(hasRoom(filter), filter);                                              // get array with results for reducer
         String jsonResults = serializeResults(resultRooms);                                                 // serialize results to json
+        new Thread(() -> {
+            Socket socket = null;
+            try {
+                socket = new Socket(hostname, reducerPort);                              // open socket to worker's port
+            } catch (IOException e) {
+                e.printStackTrace();
+            }                               
+            PrintWriter outputWorker = null;
+            try {
+                outputWorker = new PrintWriter(socket.getOutputStream(), true);       // set output
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            sendRequest(outputWorker, jsonResults);     // send request to reducer 
+        }).start();
         if (!resultRooms.getRooms().isEmpty()) {                                                            // if json with results is not empty
             sendHttpResponse(out, 200, "OK", jsonResults
             , "application/json");                              // send response for successful http request                        
@@ -356,6 +373,16 @@ public class Worker
             sendHttpResponse(out, 404, "Not Found", jsonResults
             , "application/json");                                          // send response for unsuccessful http request
         }
+    }
+    // Sends request to reducer
+    private void sendRequest(PrintWriter out, String jsonBody)
+    {
+        out.println("Host: localhost");
+        out.println("Content-Type: application/json");
+        out.println("Content-Length: " + jsonBody.length());
+        out.println("Connection: close");
+        out.println();
+        out.println(jsonBody);
     }
     // Sends error message when the server is incapable of performing the request
     private static void sendNotImplementedResponse(OutputStream out) throws IOException {
