@@ -70,7 +70,7 @@ public class Worker
         return gson.fromJson(json, Room.class);
     } 
     // Serialize results of worker's to Json 
-    private String serializeResults(RoomResult resRooms)
+    private String serializeResults(RoomArray resRooms)
     {
         Gson gson = new GsonBuilder()
         .registerTypeAdapter(LocalDate.class, new LocalDateSerializer())
@@ -150,10 +150,10 @@ public class Worker
         return indexes;
     }
     // Returns an array of rooms according to given filters and passes the filters' id to rooms
-    private RoomResult map(ArrayList<Integer> indx,  Filter filter) throws InterruptedException
+    private RoomArray map(ArrayList<Integer> indx,  Filter filter) throws InterruptedException
     {          
         Room resultRoom;                                            // room result instance
-        RoomResult results = new RoomResult();                      // initialize array
+        RoomArray results = new RoomArray();                      // initialize array
         if (!indx.isEmpty()) {                                      // if worker has a room with the given filter
             for(Integer index : indx) {                             // for room index in indexes array
                 resultRoom = rooms.get(index).copy();               // copy room
@@ -208,10 +208,10 @@ public class Worker
         return indexes;
     }
     // Returns an array of rooms according to given date range and passes the request's id to array
-    private RoomResult resultBookings(ArrayList<Integer> indx, Request request) 
+    private RoomArray resultBookings(ArrayList<Integer> indx, Request request) 
     {
         Room resultRoom;                                            // room result instance
-        RoomResult results = new RoomResult();                      // initialize array
+        RoomArray results = new RoomArray();                      // initialize array
         if (!indx.isEmpty()) {                                      // if indexes array isn't empty
             for(Integer index : indx) {                             // for room index in indexes array
                 resultRoom = rooms.get(index).copy();               // copy room
@@ -283,30 +283,61 @@ public class Worker
         System.out.println("\nReceived request "+ filter.getId() + " with filter: \n" 
                                 +  filter.toString()  
                                 + ", Thread: " + Thread.currentThread().threadId());
-        RoomResult resultRooms = map(hasRoom(filter), filter);                                              // get array with results for reducer
+        RoomArray resultRooms = map(hasRoom(filter), filter);                                              // get array with results for reducer
         String jsonResults = serializeResults(resultRooms);                                                 // serialize results to json
-        new Thread(() -> {
+        Thread reduce = new Thread(() -> {
             Socket socket = null;
             try {
                 socket = new Socket(hostname, reducerPort);                              // open socket to worker's port
             } catch (IOException e) {
                 e.printStackTrace();
             }                               
-            PrintWriter outputWorker = null;
+            PrintWriter outputReducer = null;
             try {
-                outputWorker = new PrintWriter(socket.getOutputStream(), true);       // set output
+                outputReducer = new PrintWriter(socket.getOutputStream(), true);       // set output
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            sendRequest(outputWorker, jsonResults);     // send request to reducer 
-        }).start();
-        if (!resultRooms.getRooms().isEmpty()) {                                                            // if json with results is not empty
-            sendHttpResponse(out, 200, "OK", jsonResults
-            , "application/json");                              // send response for successful http request                        
-        } else {
-            sendHttpResponse(out, 404, "Not Found", jsonResults
-            , "application/json");      // send response for unsuccessful http request
-        }
+            BufferedReader inputReducer = null;                          // buffer for inputs from worker
+            try {
+                inputReducer = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }                    
+            if(!resultRooms.getRooms().isEmpty()) {
+                sendReducerRequest(outputReducer, jsonResults);     // send request to reducer 
+            } else {
+                try {
+                    sendHttpResponse(out, 404, "Not Found", "No such room"
+                    , "application/json");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }    
+            }
+            // Read the response
+            String responseBody = null;                                
+            try {
+                responseBody = extractBody(inputReducer);                // extract json with results 
+                if(responseBody.equals("Reduction done")){
+                    sendHttpResponse(out, 200, "OK", "Reduction done"
+                    , "application/json");                              // send response for successful http request                                                    
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {
+                consumeRemainingRequest(inputReducer);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {
+                socket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+        reduce.start();
+        reduce.join();
     }
     // Handles requests for booking
     private void handleBookRoomRequest(BufferedReader in, OutputStream out) throws IOException {
@@ -346,7 +377,7 @@ public class Worker
         System.out.println("\n" + "Received request "+ request.getId() 
                                 + " with manager ID: "+ managerID 
                                 + ", Thread: " + Thread.currentThread().threadId());
-        RoomResult bookings = resultBookings(isBooked(managerID), request);             // get array with bookings(booked rooms) for manager
+        RoomArray bookings = resultBookings(isBooked(managerID), request);             // get array with bookings(booked rooms) for manager
         String jsonResults = serializeResults(bookings);                                // serialize results with bookings to json
         if (!bookings.getRooms().isEmpty()) {                                                         // if json with results is not null
             sendHttpResponse(out, 200, "OK", jsonResults
@@ -364,7 +395,7 @@ public class Worker
         System.out.println("\nReceived request: " + room.getId() + " with:"  
                             + " \n" + "Date range: " + room.getDateRange() 
                             + ", Thread: " + Thread.currentThread().threadId());
-        RoomResult bookings = resultBookings(isBookedDateRange(room.getDateRange()), room);
+        RoomArray bookings = resultBookings(isBookedDateRange(room.getDateRange()), room);
         String jsonResults = serializeResults(bookings);                                // serialize results with bookings to json
         if (bookings != null) {                                                         // if json with results is not null
             sendHttpResponse(out, 200, "OK", jsonResults
@@ -375,7 +406,7 @@ public class Worker
         }
     }
     // Sends request to reducer
-    private void sendRequest(PrintWriter out, String jsonBody)
+    private void sendReducerRequest(PrintWriter out, String jsonBody)
     {
         out.println("Host: localhost");
         out.println("Content-Type: application/json");

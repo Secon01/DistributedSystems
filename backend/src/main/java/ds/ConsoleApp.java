@@ -258,7 +258,7 @@ public class ConsoleApp extends Thread {
                        reducers.add(reducer);                               // add reducer objects with results in reducers array
                     }
                     MutableBag<String> areaBookings = Bags.mutable.empty();
-                    for(RoomResult result: reducer.getResults()) {
+                    for(RoomArray result: reducer.getResults()) {
                         for(Room room : result.getRooms()) {
                             int bookings = 1;
                             areaBookings.addOccurrences(room.getArea(), bookings);
@@ -337,8 +337,7 @@ public class ConsoleApp extends Thread {
         out.println(jsonBody);
     }
     public static void main(String[] args) throws IOException, InterruptedException {
-        new ConsoleApp().start();       // start thread for console app             
-        /* 
+        //new ConsoleApp().start();       // start thread for console app             
         Scanner sc = new Scanner(System.in);
         System.out.println("Give input");
         String in = sc.nextLine();
@@ -394,6 +393,5 @@ public class ConsoleApp extends Thread {
             }         
         }
         sc.close();   
-       */ 
     }
 }

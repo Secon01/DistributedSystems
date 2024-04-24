@@ -6,17 +6,25 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 public class Reducer2 
 {   
-    private static ServerSocket serverSocket;       // server socker 
-    private static int port = 8001;                 // set port of reducer
-    private static String hostname = "localhost";   // host name       
+    private static ServerSocket serverSocket;                   // server socker 
+    private static int port = 8001;                             // set port of reducer
+    private static String hostname = "localhost";               // host name       
+    private Map<Integer, ArrayList<RoomArray>> reduceResults;   // array with reduced results
+
     // Reducer constructor
     Reducer2() throws IOException
     {
+        reduceResults = new HashMap<>();                                // reduce results initialization
         serverSocket = new ServerSocket(port);                          // create server socket
         System.out.println("Reducer is listening on port " + port);
         while(true) {
@@ -32,10 +40,53 @@ public class Reducer2
             }).start();
         }
     }
-    // Deserializes json to request object 
-    private Request deserializeRequest(String json)
+    // Deserialize json to results  
+    private RoomArray deserializeRoomArray(String json)
     {
-        return new Gson().fromJson(json, Request.class);
+        Gson gson = new GsonBuilder()
+        .registerTypeAdapter(LocalDate.class, new LocalDateDeserializer())
+        .create();
+        return gson.fromJson(json, RoomArray.class);
+    }
+    private String serializeResults(ArrayList<RoomArray> results)
+    {
+        Gson gson = new GsonBuilder()
+        .registerTypeAdapter(LocalDate.class, new LocalDateSerializer())
+        .create();
+        return gson.toJson(results);
+    }
+    private void printRooms()
+    {
+        for(Map.Entry<Integer, ArrayList<RoomArray>> set : reduceResults.entrySet()) {
+            System.out.println("Hash map size: " + reduceResults.size());
+            for(RoomArray res : set.getValue()) {
+                res.printRooms();
+                System.out.println("Array size " + set.getValue().size());
+            }
+        }
+    }
+    // Method that adds the RoomResult type object to the Array
+    private synchronized void reduce(RoomArray resRooms) throws InterruptedException
+    {
+        if(reduceResults.containsKey(resRooms.getId())) {                          
+            this.reduceResults.get(resRooms.getId()).add(resRooms);        
+            //notify();
+        } else {
+            this.reduceResults.put(resRooms.getId(), new ArrayList<>());
+            this.reduceResults.get(resRooms.getId()).add(resRooms);
+            //wait(); 
+        }    
+    }
+    // Returns result from hash map
+    private ArrayList<RoomArray> getResults(int requestId)
+    {
+        ArrayList<RoomArray> results = null;
+        for(Integer id : reduceResults.keySet()) {
+            if(id == requestId) {
+                results = reduceResults.get(id);
+            }
+        }
+        return results;
     }
     // Runs server side of reducer
     private void runServer(Socket connection) throws IOException, InterruptedException
@@ -45,18 +96,39 @@ public class Reducer2
         String requestLine = input.readLine();                                                              // set request line 
         if (requestLine == null || requestLine.isEmpty()) {
             return;                                                                                         // kill thread running
+        } else if(requestLine.startsWith("GET /getResult")) {
+            handleGetResultRequest(input, output);
+        } else {
+            handleRequest(input, output);
         }
-        handleRequest(input, output);
         consumeRemainingRequest(input);
         connection.close();                                                                                 // close connection      
+        //System.out.println(results.toString());
+    }
+    // Handles requests from master for getting results
+    private void handleGetResultRequest(BufferedReader in, OutputStream out) throws IOException
+    {
+        String jsonID = extractBody(in);
+        int id = new Gson().fromJson(jsonID, Integer.class);
+        System.out.println("\nReceived request for search request with id: " + id 
+                            + ", Thread : " + Thread.currentThread().threadId());
+        //ArrayList<RoomArray> results = getResults(id);
+        //for(RoomArray ra : results) {
+        //    ra.printRooms();
+        //}
+        String jsonResults = serializeResults(getResults(id));
+        sendHttpResponse(out, 200, "OK", jsonResults
+        , "application/json");                              // send response for successful http request                                
     }
     // Handles incoming requests for reducer
-    private void handleRequest(BufferedReader in, OutputStream out) throws IOException
+    private void handleRequest(BufferedReader in, OutputStream out) throws IOException, InterruptedException
     {
-        String jsonRequest = extractBody(in);                                        // extract json from http request body
-        Request request = deserializeRequest(jsonRequest);
-        Room room = (Room) request;
-        System.out.println(room.getArea());
+        //Result results = new Result();
+        String jsonRoomArray = extractBody(in);                                        // extract json from http request body
+        RoomArray result = deserializeRoomArray(jsonRoomArray);
+        reduce(result);
+        sendHttpResponse(out, 200, "OK", "Reduction done"
+        , "application/json");                              // send response for successful http request                        
     }
     // Extracts body from http search room request
     private static String extractBody(BufferedReader in) throws IOException 
@@ -78,6 +150,13 @@ public class Reducer2
             requestBody.append(new String(buffer));
         }
         return requestBody.toString();
+    }
+    // Builds and sends the http response
+    private static void sendHttpResponse(OutputStream out, int statusCode, String statusMessage, String body, String contentType) throws IOException {
+        String httpResponse = String.format("HTTP/1.1 %d %s\r\nContent-Type: %s\r\nContent-Length: %d\r\n\r\n%s", statusCode, statusMessage, 
+                                            contentType, body.getBytes().length, body);                     // format of http header
+        //System.out.println(httpResponse);   
+        out.write(httpResponse.getBytes());
     }
     // Clear buffer in case anything is left
     private static void consumeRemainingRequest(BufferedReader in) throws IOException {

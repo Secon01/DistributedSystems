@@ -2,13 +2,13 @@ package ds;
 
 import java.util.ArrayList;
 
-public class RoomResult 
+public class RoomArray 
 {
     private ArrayList<Room> rooms;                   // array with searching results 
     private int id;                                  // id of array 
 
     // Costructor 
-    RoomResult()
+    RoomArray()
     {
         this.rooms = new ArrayList<>();            // initialize a new array when the method is called   
     }

@@ -5,6 +5,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.lang.reflect.Type;
 import java.net.Socket;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -13,6 +14,7 @@ import java.util.Scanner;
 import java.util.regex.Pattern;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 
 public class Dummy extends Thread {                      
    private static String hostname = "localhost";            // hostname ip address
@@ -205,14 +207,23 @@ public class Dummy extends Thread {
       return gson.toJson(filter);
    }
 
-    // Deserialize json to reducer object  
-    private Reducer deserializeReducer(String json)
-    {
-        Gson gson = new GsonBuilder()
-            .registerTypeAdapter(LocalDate.class, new LocalDateDeserializer())
-            .create();
-        return gson.fromJson(json, Reducer.class);
-    }
+   // Deserialize json to reducer object  
+   private Reducer deserializeReducer(String json)
+   {
+      Gson gson = new GsonBuilder()
+         .registerTypeAdapter(LocalDate.class, new LocalDateDeserializer())
+         .create();
+      return gson.fromJson(json, Reducer.class);
+   }
+
+   private ArrayList<RoomArray> deserializeResults(String json)
+   {
+      Gson gson = new GsonBuilder()
+               .registerTypeAdapter(LocalDate.class, new LocalDateDeserializer())
+               .create();
+      Type listType = new TypeToken<ArrayList<RoomArray>>() {}.getType();
+      return gson.fromJson(json, listType);
+   }
 
    @Override
    public void run() 
@@ -233,9 +244,9 @@ public class Dummy extends Thread {
             System.out.println(json);                                  // print the appropriate message 
             return;
          } else {
-            Reducer reducer = deserializeReducer(json);              // create reducer object from json  
-            synchronized(reducer) {
-               reducers.add(reducer);                                // add reducer objects with results in reducers array
+            ArrayList<RoomArray> results = deserializeResults(json);
+            for(RoomArray ra : results) {
+               ra.printRooms();
             }   
          }
       }  else if(input.equals("book")) {                             // check if input is equal to 'book'
@@ -316,14 +327,15 @@ public class Dummy extends Thread {
       out.println(jsonBody);
    }
    public static void main(String[] args) throws IOException, InterruptedException {
-      new Dummy().start(); 
-      /*  
+      //new Dummy().start();   
       Scanner scan = new Scanner(System.in);
       System.out.println("Give input: [search, book, rate]");
       input = scan.nextLine();
       if(input .equals("search")) {  // Search()
          for(int i = 0; i < 1; i++) {
-            (new Dummy("Larisa", "2024-04-06", "2024-04-13", 0, 0.0, 0)).start(); 
+            (new Dummy(null, null, null, 2, 0.0, 0)).start(); 
+            (new Dummy(null, null, null, 1, 0.0, 0)).start(); 
+            (new Dummy(null, null, null, 0, 0.0, 0)).start();             
          }
          Thread.sleep(1000);
          Collections.sort(reducers);         // sort reducers array list based on current id
@@ -350,6 +362,5 @@ public class Dummy extends Thread {
             new Dummy(2.6,"Kostas Camping").start();
       }
       scan.close();
-      */
    }  
 }

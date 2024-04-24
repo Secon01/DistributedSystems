@@ -31,6 +31,6 @@
       <groupId>org.eclipse.collections</groupId>
       <artifactId>eclipse-collections</artifactId>
       <version>11.0.0</version>
-    </dependency>
+    </dependency>  
   </dependencies>
 </project>
