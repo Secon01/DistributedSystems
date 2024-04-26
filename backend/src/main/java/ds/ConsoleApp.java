@@ -28,7 +28,7 @@ public class ConsoleApp extends Thread {
     private static String hostname = "localhost";       // hostname adress
     private static int port = 8000;                     // port
     private static String input;                        // input instance
-    private static ArrayList<Reducer> reducers;         // array for recucer objects
+    private static ArrayList<Results> arrayResults;     // array of results objects for printing
     // Constructor for add room function 
     ConsoleApp(Room room) throws IOException
     {
@@ -149,10 +149,10 @@ public class ConsoleApp extends Thread {
                 managerID = Integer.parseInt(inp.nextLine());
                 input = "get booking";
                 this.run();                                                                   // call run of current thread
-                Collections.sort(reducers);                                                   // sort reducers array list based on current id
-                for(Reducer r : reducers) {                                                   // for each reducer obejct in reducers arraylist
-                    r.printRooms();                                                           // print results
-                }
+                Collections.sort(arrayResults);
+                for(Results res : arrayResults) {
+                   res.printRooms();
+                }       
                 break;
             case 3:
                 room = new Room();                                                             // create an empty room object
@@ -191,13 +191,10 @@ public class ConsoleApp extends Thread {
     public String readFileToString(String filePath) throws IOException {
         return new String(Files.readAllBytes(Paths.get(filePath)));
     }
-    // Deserialize json to reducer object  
-    private Reducer deserializeReducer(String json)
+    // Add results to array of results for printing
+    private synchronized void addResults(Results results)
     {
-        Gson gson = new GsonBuilder()
-            .registerTypeAdapter(LocalDate.class, new LocalDateDeserializer())
-            .create();
-        return gson.fromJson(json, Reducer.class);
+        arrayResults.add(results);
     }
     // Serialize manager's personal ID
     private String serializeManagerID(int mID)
@@ -220,6 +217,14 @@ public class ConsoleApp extends Thread {
             .create();
         return gson.fromJson(json, Room.class);
     }    
+    // Deserializes results object from json
+    private Results deserializeResults(String json)
+    {
+        Gson gson = new GsonBuilder()
+                .registerTypeAdapter(LocalDate.class, new LocalDateDeserializer())
+                .create();
+        return gson.fromJson(json, Results.class);
+    }
     @Override
     public void run() 
     {
@@ -237,28 +242,22 @@ public class ConsoleApp extends Thread {
                 String responseBody = extractBody(in);
                 System.out.println("\n" + responseBody);
             } else if(input.equals("get booking")) {               // check if input is equal to 'get booking'
-                reducers = new ArrayList<>();                               // array list with reducer objects for printing
+                arrayResults = new ArrayList<>();            
                 sendGetBookRequest(out);                                    // send request in order to get the bookings
                 String json = extractBody(in);                              // extract json from http request body 
                 if (!json.startsWith("{\"message\"")) {
-                    Reducer reducer = deserializeReducer(json);             // create reducer object from json
-                    synchronized(reducer) {
-                       reducers.add(reducer);                               // add reducer objects with results in reducers array
-                    }
+                    Results results = deserializeResults(json);             // create results object from json
+                    addResults(results);                    
                 } else {
                     System.out.println("\n" + json + "\n");                 // read the response
                 }
             } else if(input.equals("area booking")) {              // check if input is equal to 'area bookings'
-                reducers = new ArrayList<>();                                // array list with reducer objects for printing
                 sendAreaBookRequest(out);
                 String json = extractBody(in);                              // extract json from http request body 
                 if (!json.startsWith("{\"message\"")) {
-                    Reducer reducer = deserializeReducer(json);             // create reducer object from json
-                    synchronized(reducer) {
-                       reducers.add(reducer);                               // add reducer objects with results in reducers array
-                    }
+                    Results results = deserializeResults(json);
                     MutableBag<String> areaBookings = Bags.mutable.empty();
-                    for(RoomArray result: reducer.getResults()) {
+                    for(RoomArray result: results.getResults()) {
                         for(Room room : result.getRooms()) {
                             int bookings = 1;
                             areaBookings.addOccurrences(room.getArea(), bookings);
@@ -379,12 +378,12 @@ public class ConsoleApp extends Thread {
             input = in;
             for(int i = 0; i < 1; i++) {
                 new ConsoleApp(7).start();
-                new ConsoleApp(13).start();
+                //new ConsoleApp(13).start();
                 Thread.sleep(1000);
-                Collections.sort(reducers);                     // sort reducers array list based on current id
-                for(Reducer r : reducers) {                   // for each reducer obejct in reducers arraylist
-                    r.printRooms();                           // print results
-                }
+                Collections.sort(arrayResults);
+                for(Results res : arrayResults) {
+                   res.printRooms();
+                }       
             }
         } else if(in.equals("area booking")) {
             input = in;

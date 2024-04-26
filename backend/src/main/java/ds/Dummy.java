@@ -342,8 +342,8 @@ public class Dummy extends Thread {
          }
       } else if (input.equals("book")){   // Book()
          for(int i = 0; i < 2; i++) {
-            new Dummy("HotelPoseidon").start();
             new Dummy("Double Room").start();
+            /* 
             new Dummy("Single Room").start();
             new Dummy("Family Room").start();
             new Dummy("Suite").start();
@@ -353,6 +353,7 @@ public class Dummy extends Thread {
             new Dummy("Penthouse").start();
             new Dummy("Standard Room").start();
             new Dummy("Executive Suite").start();
+            */
          }         
       } else if(input.equals("rate")) { // Rate()
             new Dummy(4.2,"Single Room").start();

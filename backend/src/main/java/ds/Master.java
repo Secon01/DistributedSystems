@@ -52,10 +52,9 @@ public class Master
         return requestID++;                                           
     }
     // Sets unique id to request 
-    private void setUniqueID(Request request, Reducer reducer)
+    private void setUniqueID(Request request)
     {
         request.setId(getUniqueNumber());
-        reducer.setCurrentID(request.getId());
     }
     // Hash function 
     private static int hashFunc(String roomName, int numOfWorkers) {
@@ -219,10 +218,9 @@ public class Master
     }
     // Handles requests for searching room
     private void handleSearchRoomRequest(BufferedReader in, OutputStream out) throws IOException, InterruptedException {
-        Reducer reducer = new Reducer();                                            // create reducer object
         String jsonFilter = extractBody(in);                                        // extract json from http request body
         Filter filter = deserializeFilter(jsonFilter);                              // create filter object from json 
-        setUniqueID(filter, reducer);                                               // set a unique id to filter and reducer object
+        setUniqueID(filter);                                               // set a unique id to filter and reducer object
         jsonFilter = serializeFilter(filter);                                       // convert filter object back to json
         System.out.println("\n" + "Received request "+ filter.getId() + " with filter: \n" 
                                 +  filter.toString()  
@@ -408,16 +406,16 @@ public class Master
     // Handles requests for getting bookings
     private void handleGetBookRequest(BufferedReader in, OutputStream out) throws IOException, InterruptedException 
     {
-        Reducer reducer = new Reducer();                                            // create reducer object
         String jsonMangerID = extractBody(in);                                      // extract json with managerID from request body
         int managerID = deserializeManagerID(jsonMangerID);                         // get manager ID from json 
         Request request = new Request();                                            // create request object
         request.setManagerID(managerID);                                            // set manager ID field of request object
-        setUniqueID(request, reducer);                                              // set unique ID to request and reducer object 
+        setUniqueID(request);                                              // set unique ID to request and reducer object 
         String jsonRequest = serializeRequest(request);                             // create json from request object
         System.out.println("\n" + "Received request "+ request.getId() 
                                 + " with manager ID: "+ managerID 
                                 + ", Thread: " + Thread.currentThread().threadId());
+        Flag reduction = new Flag();                                        // create flag object for lambda expression                                
         for(Worker worker : workerConfig.workers) {                                 // for each worker configured
             Thread work = new Thread(() -> { 
                 Socket socket = null;
@@ -440,16 +438,13 @@ public class Master
                 }
                 sendGetBookRequest(outputWorker, jsonRequest);                      // send request to get bookings
                 // Read the response
-                String responseBody = null;                                         // body of http response 
+                String responseBody = null;                                
                 try {
-                    responseBody = extractBody(inputWorker);                        // extract json with results 
+                    responseBody = extractBody(inputWorker);                // extract json with results 
+                    if(responseBody.equals("Reduction done")) {     // if reduction is done by reducer
+                        reduction.setFlag(true);                        // set flag to true
+                    }                   
                 } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                RoomArray results =  deserializeResults(responseBody);             // deserialize json with searching results
-                try {
-                    reducer.reduce(results.getId(), results);                       // reduce results with same id
-                } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
                 try {
@@ -458,44 +453,47 @@ public class Master
                     e.printStackTrace();
                 }
                 try {
-                    socket.close();                                                 // close socket
+                    socket.close();                                         // close socket
                 } catch (IOException e) {
                     e.printStackTrace();
-                } 
+                }                                                                                
             });
             work.start();                                                           // start thread
             work.join();                                                            // call external thread to wait for inside thread to finish
         }
-        if(reducer.isEmpty()) {                                                      // checb if anything was found
+        if(!reduction.getFlag()) {      // if flag for reduction isn't true
             try {
-                // Send response for succesfull http request
-                sendHttpResponse(out, 404, "Not Found", 
-                                "{\"message\":\"Bookings not found\"}",
-                    "application/json");                  
+                // Send response for unsuccesfull http request
+                sendHttpResponse(out, 404, "Not Found", "{\"message\":\"No bookings found\"}"
+                , "application/json");                  
             } catch (IOException e) {
                 e.printStackTrace();
             }                                                    
         } else {
-            try {
-                // Send response for succesfull http request
-                sendHttpResponse(out, 200, "OK", 
-                serializeReducer(reducer) , "application/json");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }                                                    
+            String jsonID = new Gson().toJson(request.getId());
+            Socket socket = new Socket(hostname, reducerPort);
+            PrintWriter outputReducer = new PrintWriter(socket.getOutputStream(), true);
+            BufferedReader inputReducer = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            sendReducerRequest(outputReducer, jsonID);
+            // Read the response
+            String responseBody = extractBody(inputReducer);
+            sendHttpResponse(out, 200, "OK", responseBody
+            , "application/json");                              // send response for successful http request                                    
+            consumeRemainingRequest(inputReducer);
+            socket.close();
         }
     }
     // Handles requests for getting bookings by area in given date range
     private void handleAreaBookRequest(BufferedReader in, OutputStream out) throws IOException, InterruptedException
     {
-        Reducer reducer = new Reducer();                                            // create reducer object
         String jsonRoom = extractBody(in);                                          // extract json of room with given data range from http request body
         Room room = deserializeRoom(jsonRoom);                                      // get room object from json 
-        setUniqueID(room, reducer);                                            // set unique ID to room and reducer object
+        setUniqueID(room);                                                          // set unique ID to room object
         String jsonDataRange = serializeRoom(room);                                 // create json of room with given data range from room object
         System.out.println("\nReceived request: " + room.getId() + " with:"  
                             + " \n" + "Date range: " + room.getDateRange() 
                             + ", Thread: " + Thread.currentThread().threadId());
+        Flag reduction = new Flag();                                                // create flag object for lambda expression                                        
         for(Worker worker : workerConfig.workers) {                                 // for each worker configured
             Thread work = new Thread(() -> {                                        // create thread 
                 Socket socket = null;
@@ -518,18 +516,13 @@ public class Master
                 }
                 sendAreaBookRequest(outputWorker, jsonDataRange);                   // send request with given date range
                 // Read the response
-                String responseBody = null;                                         // body of http response 
+                String responseBody = null;                                
                 try {
-                    responseBody = extractBody(inputWorker);                        // extract json with results 
+                    responseBody = extractBody(inputWorker);                // extract json with results 
+                    if(responseBody.equals("Reduction done")) {     // if reduction is done by reducer
+                        reduction.setFlag(true);                        // set flag to true
+                    }                   
                 } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                RoomArray results =  deserializeResults(responseBody);     // deserialize json with searching results
-                try {
-                    if(results != null) {
-                        reducer.reduce(results.getId(), results);               // reduce results with same id
-                    }
-                } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
                 try {
@@ -546,22 +539,26 @@ public class Master
             work.start();
             work.join();
         }           
-        if(reducer.isEmpty()) {                            // if there are no results
+        if(!reduction.getFlag()) {      // if flag for reduction isn't true
             try {
                 // Send response for unsuccesfull http request
-                sendHttpResponse(out, 404, "Not Found", "{\"message\":\"Bookings not found\"}"
-                , "application/json");          
+                sendHttpResponse(out, 404, "Not Found", "{\"message\":\"No bookings found\"}"
+                , "application/json");                  
             } catch (IOException e) {
                 e.printStackTrace();
             }                                                    
         } else {
-            try {
-                // Send response for succesfull http request
-                sendHttpResponse(out, 200, "OK", 
-                serializeReducer(reducer) , "application/json");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }                                                    
+            String jsonID = new Gson().toJson(room.getId());
+            Socket socket = new Socket(hostname, reducerPort);
+            PrintWriter outputReducer = new PrintWriter(socket.getOutputStream(), true);
+            BufferedReader inputReducer = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            sendReducerRequest(outputReducer, jsonID);
+            // Read the response
+            String responseBody = extractBody(inputReducer);
+            sendHttpResponse(out, 200, "OK", responseBody
+            , "application/json");                              // send response for successful http request                                    
+            consumeRemainingRequest(inputReducer);
+            socket.close();
         }
     }
     // Sends request to reducer

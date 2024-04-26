@@ -379,19 +379,62 @@ public class Worker
                                 + ", Thread: " + Thread.currentThread().threadId());
         RoomArray bookings = resultBookings(isBooked(managerID), request);             // get array with bookings(booked rooms) for manager
         String jsonResults = serializeResults(bookings);                                // serialize results with bookings to json
-
-
-        
-        if (!bookings.getRooms().isEmpty()) {                                                         // if json with results is not null
-            sendHttpResponse(out, 200, "OK", jsonResults
-            , "application/json");                                          // send response for successful http request                        
-        } else {
-            sendHttpResponse(out, 404, "Not Found", jsonResults
-            , "application/json");                                          // send response for unsuccessful http request
-        }
+        Thread reduce = new Thread(() -> {
+            Socket socket = null;
+            try {
+                socket = new Socket(hostname, reducerPort);                              // open socket to worker's port
+            } catch (IOException e) {
+                e.printStackTrace();
+            }                               
+            PrintWriter outputReducer = null;
+            try {
+                outputReducer = new PrintWriter(socket.getOutputStream(), true);       // set output
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            BufferedReader inputReducer = null;                          // buffer for inputs from worker
+            try {
+                inputReducer = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }                    
+            if(!bookings.getRooms().isEmpty()) {                    // if bookings are not empty
+                sendReducerRequest(outputReducer, jsonResults);     // send request to reducer 
+            } else {
+                try {
+                    sendHttpResponse(out, 404, "Not Found", "No bookings found"
+                    , "application/json");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }    
+            }
+            // Read the response
+            String responseBody = null;                                
+            try {
+                responseBody = extractBody(inputReducer);                // extract json with results 
+                if(responseBody.equals("Reduction done")){
+                    sendHttpResponse(out, 200, "OK", "Reduction done"
+                    , "application/json");                              // send response for successful http request                                                    
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {
+                consumeRemainingRequest(inputReducer);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {
+                socket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+        reduce.start();
+        reduce.join();
     }
     // Handles requests for getting bookings by area in given date range
-    private void handleAreaBookRequest(BufferedReader in, OutputStream out) throws IOException
+    private void handleAreaBookRequest(BufferedReader in, OutputStream out) throws IOException, InterruptedException
     {
         String jsonRoom = extractBody(in);                                              // extract json of room object with given date range from http request body
         Room room = deserializeRoom(jsonRoom);                                          // create a room object with given date range from json
@@ -400,13 +443,59 @@ public class Worker
                             + ", Thread: " + Thread.currentThread().threadId());
         RoomArray bookings = resultBookings(isBookedDateRange(room.getDateRange()), room);
         String jsonResults = serializeResults(bookings);                                // serialize results with bookings to json
-        if (bookings != null) {                                                         // if json with results is not null
-            sendHttpResponse(out, 200, "OK", jsonResults
-            , "application/json");                                          // send response for successful http request                        
-        } else {
-            sendHttpResponse(out, 404, "Not Found", jsonResults
-            , "application/json");                                          // send response for unsuccessful http request
-        }
+        Thread reduce = new Thread(() -> {
+            Socket socket = null;
+            try {
+                socket = new Socket(hostname, reducerPort);                              // open socket to worker's port
+            } catch (IOException e) {
+                e.printStackTrace();
+            }                               
+            PrintWriter outputReducer = null;
+            try {
+                outputReducer = new PrintWriter(socket.getOutputStream(), true);       // set output
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            BufferedReader inputReducer = null;                          // buffer for inputs from worker
+            try {
+                inputReducer = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }                    
+            if(!bookings.getRooms().isEmpty()) {                    // if bookings are not empty
+                sendReducerRequest(outputReducer, jsonResults);     // send request to reducer 
+            } else {
+                try {
+                    sendHttpResponse(out, 404, "Not Found", "No bookings found"
+                    , "application/json");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }    
+            }
+            // Read the response
+            String responseBody = null;                                
+            try {
+                responseBody = extractBody(inputReducer);                // extract json with results 
+                if(responseBody.equals("Reduction done")){
+                    sendHttpResponse(out, 200, "OK", "Reduction done"
+                    , "application/json");                              // send response for successful http request                                                    
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {
+                consumeRemainingRequest(inputReducer);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {
+                socket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+        reduce.start();
+        reduce.join();
     }
     // Sends request to reducer
     private void sendReducerRequest(PrintWriter out, String jsonBody)
