@@ -379,6 +379,9 @@ public class Worker
                                 + ", Thread: " + Thread.currentThread().threadId());
         RoomArray bookings = resultBookings(isBooked(managerID), request);             // get array with bookings(booked rooms) for manager
         String jsonResults = serializeResults(bookings);                                // serialize results with bookings to json
+
+
+        
         if (!bookings.getRooms().isEmpty()) {                                                         // if json with results is not null
             sendHttpResponse(out, 200, "OK", jsonResults
             , "application/json");                                          // send response for successful http request                        

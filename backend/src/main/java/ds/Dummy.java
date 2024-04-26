@@ -5,7 +5,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.lang.reflect.Type;
 import java.net.Socket;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -14,20 +13,19 @@ import java.util.Scanner;
 import java.util.regex.Pattern;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
 
 public class Dummy extends Thread {                      
-   private static String hostname = "localhost";            // hostname ip address
-   private static int port = 8000;                          // port instance  
-   private static String input;                             // input instance
-   private static ArrayList<Reducer> reducers;              // array for reducer objects
-   private Scanner sc;                                      // scanner instance
-   private Filter filter;                                   // filter object instance
-   private String roomName;                                 // room name for booking
-   private String roomNameReview;                           // room name for review
-   private double rating;                                   // rating instance
-   private Review review;                                   // review object that we are going to send
-   private String regex = "\\d{4}-\\d{2}-\\d{2}";           // regular expression to match the format YYYY-MM-DD
+   private static String hostname = "localhost";                  // hostname ip address
+   private static int port = 8000;                                // port instance  
+   private static String input;                                   // input instance
+   private static ArrayList<Results> arrayResults;                // array with results for printing
+   private Scanner sc;                                            // scanner instance
+   private Filter filter;                                         // filter object instance
+   private String roomName;                                       // room name for booking
+   private String roomNameReview;                                 // room name for review
+   private double rating;                                         // rating instance
+   private Review review;                                         // review object that we are going to send
+   private String regex = "\\d{4}-\\d{2}-\\d{2}";                 // regular expression to match the format YYYY-MM-DD
 
    // Constructor in case of sending a Filter object in a search request
    Dummy(String area, String startDate, String endDate, int guests, double price, int stars) 
@@ -180,13 +178,8 @@ public class Dummy extends Thread {
    // Sends filter to master and prints results
    private void search() throws InterruptedException
    {
-      reducers = new ArrayList<>();   // array list with reducer objects for printing
       this.run();                                        // create request thread and send it to master
       Thread.sleep(1000);
-      Collections.sort(reducers);                        // sort reducers array list based on current id
-      for(Reducer reducer : reducers) {                  // for each reducer obejct in reducers arraylist
-         reducer.printRooms();                           // print results
-      }
    }
    // Sends request for booking a room
    private void book()
@@ -206,25 +199,19 @@ public class Dummy extends Thread {
          .create();
       return gson.toJson(filter);
    }
-
-   // Deserialize json to reducer object  
-   private Reducer deserializeReducer(String json)
-   {
-      Gson gson = new GsonBuilder()
-         .registerTypeAdapter(LocalDate.class, new LocalDateDeserializer())
-         .create();
-      return gson.fromJson(json, Reducer.class);
-   }
-
-   private ArrayList<RoomArray> deserializeResults(String json)
+   // Deserializes results object from json
+   private Results deserializeResults(String json)
    {
       Gson gson = new GsonBuilder()
                .registerTypeAdapter(LocalDate.class, new LocalDateDeserializer())
                .create();
-      Type listType = new TypeToken<ArrayList<RoomArray>>() {}.getType();
-      return gson.fromJson(json, listType);
+      return gson.fromJson(json, Results.class);
    }
-
+   // Add results to array of results for printing
+   private synchronized void addResults(Results results)
+   {
+      arrayResults.add(results);
+   }
    @Override
    public void run() 
    {
@@ -237,17 +224,14 @@ public class Dummy extends Thread {
       try (PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
          BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
       if (input.equals("search")) {                           // check if input is equal to 'search' 
-         reducers = new ArrayList<>();                                 // array list with reducer objects for printing
          sendSearchRoomRequest(out);                                   // send request for searching a room
          String json = extractBody(in);                                // extract json from http request body
-         if(json.startsWith("{\"message\"")) {                  // if json string is null 
+         if(json.startsWith("{\"message\"")) {                  // if json string is null             
             System.out.println(json);                                  // print the appropriate message 
             return;
          } else {
-            ArrayList<RoomArray> results = deserializeResults(json);
-            for(RoomArray ra : results) {
-               ra.printRooms();
-            }   
+            Results results = deserializeResults(json);
+            addResults(results);
          }
       }  else if(input.equals("book")) {                             // check if input is equal to 'book'
          sendBookRoomRequest(out);                                            // send request for booking a room
@@ -332,16 +316,30 @@ public class Dummy extends Thread {
       System.out.println("Give input: [search, book, rate]");
       input = scan.nextLine();
       if(input .equals("search")) {  // Search()
+         arrayResults = new ArrayList<>();
          for(int i = 0; i < 1; i++) {
             (new Dummy(null, null, null, 2, 0.0, 0)).start(); 
             (new Dummy(null, null, null, 1, 0.0, 0)).start(); 
             (new Dummy(null, null, null, 0, 0.0, 0)).start();             
          }
+         //Thread.sleep(1000);
+         /* 
+         for(int i = 0; i < arrayResults.size(); i++) {
+            ArrayList<RoomArray> results = arrayResults.get(i);
+            for(int j = 0; j < results.size(); j++) {
+               System.out.println("----------- Request " + results.get(j).getId()
+               + " -----------");
+               for(RoomArray rooms : results) {
+                  rooms.printRooms();   
+               }
+            }                                 
+         }
+         */
          Thread.sleep(1000);
-         Collections.sort(reducers);         // sort reducers array list based on current id
-         for(Reducer reducer : reducers) {   // for each reducer obejct in reducers arraylist
-            reducer.printRooms();            // print results        
-         }  
+         Collections.sort(arrayResults);
+         for(Results res : arrayResults) {
+            res.printRooms();
+         }
       } else if (input.equals("book")){   // Book()
          for(int i = 0; i < 2; i++) {
             new Dummy("HotelPoseidon").start();

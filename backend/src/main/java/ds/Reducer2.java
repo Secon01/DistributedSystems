@@ -48,7 +48,7 @@ public class Reducer2
         .create();
         return gson.fromJson(json, RoomArray.class);
     }
-    private String serializeResults(ArrayList<RoomArray> results)
+    private String serializeResults(Results results)
     {
         Gson gson = new GsonBuilder()
         .registerTypeAdapter(LocalDate.class, new LocalDateSerializer())
@@ -78,12 +78,13 @@ public class Reducer2
         }    
     }
     // Returns result from hash map
-    private ArrayList<RoomArray> getResults(int requestId)
+    private Results getResults(int requestId)
     {
-        ArrayList<RoomArray> results = null;
+        Results results = new Results();
         for(Integer id : reduceResults.keySet()) {
             if(id == requestId) {
-                results = reduceResults.get(id);
+                results.setId(requestId);                   // set id of results object
+                results.setResults(reduceResults.get(id));  // set array with results to results object's array
             }
         }
         return results;
@@ -110,15 +111,11 @@ public class Reducer2
     {
         String jsonID = extractBody(in);
         int id = new Gson().fromJson(jsonID, Integer.class);
-        System.out.println("\nReceived request for search request with id: " + id 
+        System.out.println("\nReceived request for results with id: " + id 
                             + ", Thread : " + Thread.currentThread().threadId());
-        //ArrayList<RoomArray> results = getResults(id);
-        //for(RoomArray ra : results) {
-        //    ra.printRooms();
-        //}
         String jsonResults = serializeResults(getResults(id));
         sendHttpResponse(out, 200, "OK", jsonResults
-        , "application/json");                              // send response for successful http request                                
+        , "application/json");                                          // send response for successful http request                                
     }
     // Handles incoming requests for reducer
     private void handleRequest(BufferedReader in, OutputStream out) throws IOException, InterruptedException
