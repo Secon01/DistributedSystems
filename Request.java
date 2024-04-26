@@ -1,12 +1,23 @@
-public class Request 
+package com.example;
+public class Request                // This class is getting extended by Filter,Review and Room
 {
     private int id;                 // id of request
+    private int managerID;          // instance for manager ID
 
-    public void setId(int id) {     // set request's id
+    // Setters
+    public void setId(int id) {     
         this.id = id;
     }
-
-    public int getId() {            // get request's id
+    public void setManagerID(int managerID) {
+        this.managerID = managerID;
+    }
+    // Getters
+    public int getId() 
+    {            
         return id;
+    }
+
+    public int getManagerID() {
+        return managerID;
     }
 }
