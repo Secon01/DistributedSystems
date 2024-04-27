@@ -21,11 +21,11 @@ public class Dummy extends Thread {
    private static ArrayList<Results> arrayResults;                // array with results for printing
    private Scanner sc;                                            // scanner instance
    private Filter filter;                                         // filter object instance
-   private String roomName;                                       // room name for booking
    private String roomNameReview;                                 // room name for review
    private double rating;                                         // rating instance
    private Review review;                                         // review object that we are going to send
    private String regex = "\\d{4}-\\d{2}-\\d{2}";                 // regular expression to match the format YYYY-MM-DD
+   private Booking booking;                                       // booking instance
 
    // Constructor in case of sending a Filter object in a search request
    Dummy(String area, String startDate, String endDate, int guests, double price, int stars) 
@@ -40,9 +40,11 @@ public class Dummy extends Thread {
       this.filter.setStars(stars);
    }
    // Constuctor in case of sending a room in a book request
-   Dummy(String roomName)
+   Dummy(String roomName, String startDate, String endDate)
    {
-      this.roomName = roomName;
+      booking = new Booking();
+      booking.setDate(startDate, endDate);
+      booking.setRoomName(roomName);
    }
    // Constructor in case of sending a Review object in a rate review
    Dummy(double stars, String roomNameReview)
@@ -154,7 +156,7 @@ public class Dummy extends Thread {
          case 7:
             Scanner rn = new Scanner(System.in);
             System.out.println("Type the name of the room you wish to book");
-            roomName = rn.nextLine();                                          // get the roomName
+            //roomName = rn.nextLine();                                          // get the roomName
             input = "book";                  
             book();                                                            // run via book()
             break;
@@ -174,7 +176,6 @@ public class Dummy extends Thread {
             System.out.println("An unknown error has occured!");
       }
    }
-
    // Sends filter to master and prints results
    private void search() throws InterruptedException
    {
@@ -198,6 +199,14 @@ public class Dummy extends Thread {
          .registerTypeAdapter(LocalDate.class, new LocalDateSerializer())
          .create();
       return gson.toJson(filter);
+   }
+   // Serializes booking object to json
+   private String serializeBooking(Booking booking)
+   {
+      Gson gson = new GsonBuilder()
+         .registerTypeAdapter(LocalDate.class, new LocalDateSerializer())
+         .create();
+      return gson.toJson(booking);
    }
    // Deserializes results object from json
    private Results deserializeResults(String json)
@@ -290,7 +299,7 @@ public class Dummy extends Thread {
    }
    // Send book request to Master
    private void sendBookRoomRequest(PrintWriter out) {
-      String jsonBody = new Gson().toJson(roomName);
+      String jsonBody = serializeBooking(booking);          // serialize booking object to json
       out.println("POST /bookRoom HTTP/1.1");
       out.println("Host: localhost");
       out.println("Content-Type: application/json");
@@ -322,27 +331,15 @@ public class Dummy extends Thread {
             (new Dummy(null, null, null, 1, 0.0, 0)).start(); 
             (new Dummy(null, null, null, 0, 0.0, 0)).start();             
          }
-         //Thread.sleep(1000);
-         /* 
-         for(int i = 0; i < arrayResults.size(); i++) {
-            ArrayList<RoomArray> results = arrayResults.get(i);
-            for(int j = 0; j < results.size(); j++) {
-               System.out.println("----------- Request " + results.get(j).getId()
-               + " -----------");
-               for(RoomArray rooms : results) {
-                  rooms.printRooms();   
-               }
-            }                                 
-         }
-         */
          Thread.sleep(1000);
          Collections.sort(arrayResults);
          for(Results res : arrayResults) {
             res.printRooms();
          }
       } else if (input.equals("book")){   // Book()
-         for(int i = 0; i < 2; i++) {
-            new Dummy("Double Room").start();
+         for(int i = 0; i < 1; i++) {
+            new Dummy("Double Room", "2024-04-08", "2024-04-10").start();
+            new Dummy("Double Room", "2024-04-11", "2024-04-13").start();
             /* 
             new Dummy("Single Room").start();
             new Dummy("Family Room").start();

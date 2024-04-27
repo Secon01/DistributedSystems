@@ -1,6 +1,7 @@
 package ds;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 
 // Room Class
 public class Room extends Request
@@ -16,10 +17,11 @@ public class Room extends Request
     private String endDate;                             // ending date of eligible booking
     private boolean available;                          // flag of availability
     private DateRange dateRange;                        // daterange
+    private ArrayList<DateRange> bookings;              // array with date ranges of room's bookings
     
     // Constructor for when starting date and ending date are given 
     Room(int id, String name, int guests, double price, double stars,
-            String area, int reviews, String image, String start, String end, boolean available)
+            String area, int reviews, String image, String start, String end, boolean available, ArrayList<DateRange> bookings)
     {
         this.setManagerID(id);      
         this.roomName = name;
@@ -35,6 +37,7 @@ public class Room extends Request
         this.dateRange = new DateRange();
         this.dateRange.setStartDate(this.startDate);
         this.dateRange.setEndDate(this.endDate);
+        this.bookings = bookings;
     }
     // Constructor for null values of start & end dates
     // because of LocalDate parse() method
@@ -90,6 +93,9 @@ public class Room extends Request
     {
         return available;
     }
+    public ArrayList<DateRange> getBookings() {
+        return bookings;
+    }
     
     // Setters
     public void setRoomName(String roomName) {
@@ -129,6 +135,14 @@ public class Room extends Request
         this.dateRange.setStartDate(startDate);
         this.dateRange.setEndDate(endDate);
     }
+    public void setBookings(ArrayList<DateRange> bookings) {
+        this.bookings = bookings;
+    }
+    // Adds date range of booking to bookings array
+    public synchronized void addBooking(DateRange bookingDateRange)
+    {
+        this.bookings.add(bookingDateRange);
+    }
     // Computes how many non null or non 0 values does this object has
     public int numNonZero()
     {
@@ -163,7 +177,8 @@ public class Room extends Request
             this.stars, this.area, this.reviews, this.roomImage, this.available);
         } else {
             return new Room(this.getManagerID(), this.roomName, this.guests, this.price, 
-            this.stars, this.area, this.reviews, this.roomImage, this.startDate, this.endDate, this.available);     // for rooms where dates are given
+            this.stars, this.area, this.reviews, this.roomImage, this.startDate, 
+            this.endDate, this.available, this.bookings);                               // for rooms where dates are given
         }
     }
 
@@ -179,6 +194,7 @@ public class Room extends Request
                "Image: " + this.roomName + "\n" +
                "Available: " + this.available + "\n" +
                "Start date: " + this.startDate + "\n" +
-               "End date: " + this.endDate;
+               "End date: " + this.endDate + "\n" +
+               "Bookings: " + this.bookings;
     }
 }

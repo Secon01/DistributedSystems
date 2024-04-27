@@ -88,7 +88,15 @@ public class Worker
     {
         return new Gson().fromJson(jsonString, Review.class);
 
-    }    
+    }
+    // Deserializes json file to booking object
+    private Booking deserializeBooking(String json)
+    {
+        Gson gson = new GsonBuilder()
+            .registerTypeAdapter(LocalDate.class, new LocalDateDeserializer())
+            .create();
+        return gson.fromJson(json, Booking.class);
+    }
     // Checking if worker has a room according to the incoming filter
     // and returns array with indexes of rooms found
     private ArrayList<Integer> hasRoom(Filter filter) throws InterruptedException
@@ -167,20 +175,40 @@ public class Worker
         return results;
     }
     // Set the room not available and does the booking
-    private synchronized boolean book(String roomName)
+    private synchronized boolean book(Booking tuple)
     {
-        boolean booked = false;                    
-            for(Room room : rooms) {
-                    if(room.getRoomName().equals(roomName) && room.getAvailable() == true) {     // if room name from method's aruments is current room's name and room is available 
-                        room.setAvailable(false);                                      // set room non available
-                        booked = true;                                                           // set flag to true
-                        break;
-                    } else {
-                        booked = false;                                                          // set flag to false
-                    }    
-            }    
-        return booked;                                                                          // return flag
-    }
+        boolean booked = false;  
+        boolean ok = false; 
+        ArrayList<DateRange> booking ;                
+        for(Room room : rooms) {    
+            if(room.getRoomName().equals(tuple.getRoomName()) ) {     // if room name from method's aruments is current room's name and room is available 
+                if(tuple.getDate().isWithinRange(room.getDateRange())){
+                    booking = room.getBookings(); 
+                    if(booking.isEmpty()){
+                        ok = true ;
+                    }else{
+                        for (DateRange b : booking){
+                            if(tuple.getDate().conflictOfBooking(b) || b.isWithinRange(tuple.getDate())){ 
+                                ok = false;
+                                break;
+                            }else {
+                                ok =true ;
+                            }                                                        
+                        } 
+                    }
+                    if(ok){
+                        room.addBooking(tuple.getDate());
+                        room.setAvailable(false);
+                        //System.out.println(room);
+                        booked = true ;
+                    }  
+                }else{
+                    booked = false ; //should've benen an exception
+                }
+            } 
+        }
+        return booked;   
+    }            
     // Checks if a room with a matching manager id is booked
     // and returns indexes array with idexes of rooms found
     private ArrayList<Integer> isBooked(int managerID)
@@ -341,16 +369,16 @@ public class Worker
     }
     // Handles requests for booking
     private void handleBookRoomRequest(BufferedReader in, OutputStream out) throws IOException {
-        String jsonRoomName = extractBody(in);                                                                            // extract json with room name from request body
-        String roomName = new Gson().fromJson(jsonRoomName, String.class);                                       // create string with room name from json 
-        System.out.println("\nReceived request for booking: " + roomName + "\n");       
-        if(book(roomName)) {                                                                                              // book room by name and check if it is booked
+        String jsonBooking = extractBody(in);                                                                            // extract json with booking from request body
+        Booking booking = deserializeBooking(jsonBooking);                                                              // create booking object from json 
+        System.out.println("\nReceived request for booking: " + booking.getRoomName() + "\n");       
+        if(book(booking)) {                                                                                              // book room by name and check if it is booked
             sendHttpResponse(out, 200, "OK", 
-                            "{\"message\":\" " + roomName + " booked\"}",
+                            "{\"message\":\" " + booking.getRoomName() + " booked\"}",
                 "application/json");                                                                         // send response for successful http request 
         } else {
             sendHttpResponse(out, 409, "Conflict", 
-                            "{\"message\":\" " + roomName + " already booked\"}", 
+                            "{\"message\":\" " + booking.getRoomName() + " already booked\"}", 
                 "application/json");                                                                        // send response for unsuccessful http request
         }
     }

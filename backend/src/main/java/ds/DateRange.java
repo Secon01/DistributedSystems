@@ -31,6 +31,13 @@ public class DateRange
         return (this.startDate.isAfter(other.startDate) || this.startDate.isEqual(other.startDate)) && 
                 (this.endDate.isBefore(other.endDate) || this.endDate.isEqual(other.endDate));
     }
+    // Checks if there is a conflict between two date ranges
+    public boolean conflictOfBooking(DateRange other){
+        return ((this.startDate.isAfter(other.startDate) || this.startDate.isEqual(other.startDate)) && 
+                (this.startDate.isBefore(other.endDate) || this.startDate.isEqual(other.endDate))||
+                (this.endDate.isAfter(other.startDate) || this.endDate.isEqual(other.startDate)) && 
+                (this.endDate.isBefore(other.endDate) || this.endDate.isEqual(other.endDate)));
+    }
     // Override equals method to compare if a given data range object 
     // is within the range of this data range object
     @Override

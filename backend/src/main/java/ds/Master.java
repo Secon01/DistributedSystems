@@ -12,7 +12,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Scanner;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -23,7 +22,6 @@ public class Master
     private static int port = 8000;                 // set port of master
     private static String hostname = "localhost";   // host name      
     private static int requestID = 0;               // id for request
-    private static ArrayList<RoomArray> results;
     private static int reducerPort = 8001;
     // Master constructor
     Master() throws IOException
@@ -42,10 +40,6 @@ public class Master
                 }
             }).start();
         }
-    }
-    private synchronized void setResults(ArrayList<RoomArray> res)
-    {
-        results = res;
     }
     // Give unique number in order in the next request
     private synchronized int getUniqueNumber() {
@@ -97,26 +91,18 @@ public class Master
             .create();
         return gson.toJson(filter);
     }
-    // Deserialize json to results  
-    private RoomArray deserializeResults(String json)
-    {
-        Gson gson = new GsonBuilder()
-        .registerTypeAdapter(LocalDate.class, new LocalDateDeserializer())
-        .create();
-        return gson.fromJson(json, RoomArray.class);
-    }
-    // Serializes reducer object to json 
-    private String serializeReducer(Reducer reducer)
-    {
-        Gson gson = new GsonBuilder()
-            .registerTypeAdapter(LocalDate.class, new LocalDateSerializer())
-            .create();
-        return gson.toJson(reducer);
-    }
     // Deserializes json file to an integer (manager ID)
     private int deserializeManagerID(String json)
     {
         return new Gson().fromJson(json, Integer.class);
+    }
+    // Deserializes json file to booking object
+    private Booking deserializeBooking(String json)
+    {
+        Gson gson = new GsonBuilder()
+            .registerTypeAdapter(LocalDate.class, new LocalDateDeserializer())
+            .create();
+        return gson.fromJson(json, Booking.class);
     }
     // Serializes request object to json 
     private String serializeRequest(Request request)
@@ -133,7 +119,6 @@ public class Master
             return;                                                                                         // kill thread running
         }
         // Header check
-        OutputStream clientOutput = null;
         if (requestLine.startsWith("POST /newRoom")) {               
             handleNewRoomRequest(input, output);
         } else if (requestLine.startsWith("POST /searchRoom")) {
@@ -147,8 +132,6 @@ public class Master
             handleAreaBookRequest(input, output);
         } else if(requestLine.startsWith("POST /giveReview")) {
             handleNewReviewRequest(input, output); 
-        } else if(requestLine.startsWith("POST /getResults")) {
-            handleReducerRequest(input, output);
         } else {
             sendNotImplementedResponse(output);
         }
@@ -168,11 +151,6 @@ public class Master
             }
         }
         return resultPort;   
-    }
-    private void handleReducerRequest(BufferedReader in, OutputStream out) throws IOException
-    {
-        String jsonResult = extractBody(in);
-
     }
     // Handles requests for new room insertion
     private void handleNewRoomRequest(BufferedReader in, OutputStream out) throws IOException {
@@ -298,11 +276,11 @@ public class Master
     // Handles requests for booking room
     private void handleBookRoomRequest(BufferedReader in, OutputStream out) throws IOException, InterruptedException 
     {
-        String jsonRoomName = extractBody(in);                                            // extract json with room name from request body
-        String roomName = new Gson().fromJson(jsonRoomName, String.class);       // create string with room name from json
-        System.out.println("\n" + "Received book request for room: " + roomName);
-        int workerID = hashFunc(roomName, workerConfig.nofWorkers);                     // hash room name and get worker id to send request  
-        int workerPort = getPort(workerID);                                             // get port of selected worker
+        String jsonBooking = extractBody(in);                                               // extract json with booking from request body
+        Booking booking = deserializeBooking(jsonBooking);                                  // create booking object from json
+        System.out.println("\n" + "Received book request for room: " + booking.getRoomName());
+        int workerID = hashFunc(booking.getRoomName(), workerConfig.nofWorkers);                         // hash room name of booking and get worker id to send request  
+        int workerPort = getPort(workerID);                                                 // get port of selected worker
         Thread book  = new Thread(() -> {
             Socket socket = null;
             try {
@@ -318,17 +296,17 @@ public class Master
             } 
             try (BufferedReader inputWorker = new BufferedReader
                                         (new InputStreamReader(socket.getInputStream()))) {
-                sendBookRoomRequest(outputWorker, jsonRoomName);                                   // send book request
+                sendBookRoomRequest(outputWorker, jsonBooking);                                   // send book request
                 // Read the response
                 String responseLine;
                 while ((responseLine = inputWorker.readLine()) != null) {
                     if(responseLine.startsWith("HTTP/1.1 409 Conflict")) {
                         sendHttpResponse(out, 409, "Conflict", 
-                        "{\"message\":\" " + roomName +  " already booked\"}", 
+                        "{\"message\":\" " + booking.getRoomName() +  " already booked\"}", 
                         "application/json");                                    // send response for unsuccessful http request            
                     } else if(responseLine.startsWith("HTTP/1.1 200 OK")) {
                         sendHttpResponse(out, 200, "OK", 
-                        "{\"message\":\" " + roomName + " booked\"}",
+                        "{\"message\":\" " + booking.getRoomName() + " booked\"}",
                         "application/json");                                    // send response for successful http request             
                     }
                 }
