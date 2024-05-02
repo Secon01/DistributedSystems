@@ -191,7 +191,7 @@ public class Room extends Request
                "Price: " + this.price + "\n" + 
                "Stars: " + this.stars + "\n" +  
                "Reviews: " + this.reviews + "\n" +
-               "Image: " + this.roomName + "\n" +
+               "Image: " + this.roomImage + "\n" +
                "Available: " + this.available + "\n" +
                "Start date: " + this.startDate + "\n" +
                "End date: " + this.endDate + "\n" +

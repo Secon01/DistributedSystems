@@ -336,7 +336,7 @@ public class ConsoleApp extends Thread {
         out.println(jsonBody);
     }
     public static void main(String[] args) throws IOException, InterruptedException {
-        //new ConsoleApp().start();       // start thread for console app             
+        //new ConsoleApp().start();       // start thread for console app               
         Scanner sc = new Scanner(System.in);
         System.out.println("Give input");
         String in = sc.nextLine();
@@ -391,6 +391,6 @@ public class ConsoleApp extends Thread {
                 new ConsoleApp("2024-04-01", "2024-04-16").start();
             }         
         }
-        sc.close();   
+        sc.close(); 
     }
 }

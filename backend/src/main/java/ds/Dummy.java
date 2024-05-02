@@ -233,6 +233,7 @@ public class Dummy extends Thread {
       try (PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
          BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
       if (input.equals("search")) {                           // check if input is equal to 'search' 
+         arrayResults = new ArrayList<>();
          sendSearchRoomRequest(out);                                   // send request for searching a room
          String json = extractBody(in);                                // extract json from http request body
          if(json.startsWith("{\"message\"")) {                  // if json string is null             
@@ -241,6 +242,7 @@ public class Dummy extends Thread {
          } else {
             Results results = deserializeResults(json);
             addResults(results);
+            results.printRooms();            
          }
       }  else if(input.equals("book")) {                             // check if input is equal to 'book'
          sendBookRoomRequest(out);                                            // send request for booking a room
@@ -257,6 +259,8 @@ public class Dummy extends Thread {
          return;                                                    
       }
       } catch (IOException e) {
+         e.printStackTrace();
+      } catch (InterruptedException e) {
          e.printStackTrace();
       } finally {
          try {
@@ -320,7 +324,8 @@ public class Dummy extends Thread {
       out.println(jsonBody);
    }
    public static void main(String[] args) throws IOException, InterruptedException {
-      //new Dummy().start();   
+      new Dummy().start(); 
+      /*   
       Scanner scan = new Scanner(System.in);
       System.out.println("Give input: [search, book, rate]");
       input = scan.nextLine();
@@ -350,7 +355,6 @@ public class Dummy extends Thread {
             new Dummy("Penthouse").start();
             new Dummy("Standard Room").start();
             new Dummy("Executive Suite").start();
-            */
          }         
       } else if(input.equals("rate")) { // Rate()
             new Dummy(4.2,"Single Room").start();
@@ -358,5 +362,6 @@ public class Dummy extends Thread {
             new Dummy(2.6,"Kostas Camping").start();
       }
       scan.close();
+      */
    }  
 }

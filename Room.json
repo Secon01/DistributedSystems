@@ -1,10 +1,10 @@
 {
 "managerID" : 7,
-"roomName" : "HotelPoseidon",
+"roomName" : "Konaki Villa",
 "guests":3,
 "price":60.31,
 "stars":0,
-"area": "Larisa",
+"area": "Crete",
 "reviews": 0,
 "roomImage":"/home/secon/Downloads/Villa-Lamia-Lesbos-Olivers-Travels-1.png",
 "available":true 
