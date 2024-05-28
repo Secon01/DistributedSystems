@@ -356,8 +356,8 @@ public class Master
             String responseBody = null;                                
             try {
                 responseBody = extractBody(inputWorker);                // extract json with results 
-                if(responseBody.equals("{\"message\":\"No such room\"}")) {
-                    sendHttpResponse(out, 404, "Not Found", "{\"message\":\"No such room\"}", 
+                if(responseBody.equals("{\"message\":\"Review out of bounds!\"}")) {
+                    sendHttpResponse(out, 404, "Not Found", "{\"message\":\"Review out of bounds!\"}", 
                     "application/json");                                    // send response for unsuccessful http request            
                 } else if(responseBody.startsWith("{\"message\":\"Review added\"}")) {
                     sendHttpResponse(out, 200, "OK", "{\"message\":\"Review added\"}",

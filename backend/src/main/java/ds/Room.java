@@ -9,7 +9,7 @@ public class Room extends Request
     private String roomName;                            // room of the name
     private int guests;                                 // number of guests
     private double price;                               // price
-    private double stars;                               // average valye of stars
+    private double stars;                               // average value of stars
     private String area;                                // area
     private int reviews;                                // number of reviews 
     private String roomImage;                           // room image ( will be shown in part b )

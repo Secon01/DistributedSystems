@@ -343,25 +343,25 @@ public class ConsoleApp extends Thread {
         if(in.equals("add room")) {
             for(int i = 0; i < 1; i++) {
                 Room room1 = new Room(7, "Luxury Suite 1", 2, 200.0, 5,
-                        "Athens", 100, "luxury_suite_1.jpg", "2024-04-01", "2024-04-07", true, new ArrayList<DateRange>());
+                        "Athens", 100, "luxury_suite_1", "2024-04-01", "2024-04-07", true, new ArrayList<DateRange>());
                 Room room2 = new Room(7, "Deluxe Suite", 3, 250.0, 4,
-                        "Athens", 90, "deluxe_suite.jpg", "2024-04-02", "2024-04-08", true, new ArrayList<DateRange>());
+                        "Athens", 90, "deluxe_suite", "2024-04-02", "2024-04-08", true, new ArrayList<DateRange>());
                 Room room3 = new Room(7, "Standard Room", 2, 150.0, 3,
-                        "Thessaloniki", 80, "standard_room.jpg", "2024-04-03", "2024-04-09", true, new ArrayList<DateRange>());
+                        "Thessaloniki", 80, "standard_room", "2024-04-03", "2024-04-09", true, new ArrayList<DateRange>());
                 Room room4 = new Room(7, "Economy Room", 1, 100.0, 2,
-                        "Thessaloniki", 70, "economy_room.jpg", "2024-04-04", "2024-04-10", true, new ArrayList<DateRange>());
+                        "Thessaloniki", 70, "economy_room", "2024-04-04", "2024-04-10", true, new ArrayList<DateRange>());
                 Room room5 = new Room(7, "Family Room", 4, 300.0, 5,
-                        "Lamia", 120, "family_room.jpg", "2024-04-05", "2024-04-11", true, new ArrayList<DateRange>());
+                        "Lamia", 120, "family_room", "2024-04-05", "2024-04-11", true, new ArrayList<DateRange>());
                 Room room6 = new Room(13, "Suite", 2, 180.0, 4,
-                        "Lamia", 110, "suite.jpg", "2024-04-06", "2024-04-12", true, new ArrayList<DateRange>());
+                        "Lamia", 110, "suite", "2024-04-06", "2024-04-12", true, new ArrayList<DateRange>());
                 Room room7 = new Room(13, "Single Room", 1, 120.0, 3,
-                        "Crete", 60, "single_room.jpg", "2024-04-07", "2024-04-13", true, new ArrayList<DateRange>());
+                        "Crete", 60, "single_room", "2024-04-07", "2024-04-13", true, new ArrayList<DateRange>());
                 Room room8 = new Room(13, "Double Room", 2, 220.0, 4,
-                        "Crete", 80, "double_room.jpg", "2024-04-08", "2024-04-14", true, new ArrayList<DateRange>());
+                        "Crete", 80, "double_room", "2024-04-08", "2024-04-14", true, new ArrayList<DateRange>());
                 Room room9 = new Room(13, "Executive Suite", 3, 280.0, 5,
-                        "Larisa", 150, "executive_suite.jpg", "2024-04-09", "2024-04-15", true, new ArrayList<DateRange>());
+                        "Larisa", 150, "executive_suite", "2024-04-09", "2024-04-15", true, new ArrayList<DateRange>());
                 Room room10 = new Room(13, "Penthouse", 6, 500.0, 5,
-                        "Larisa", 200, "penthouse.jpg", "2024-04-10", "2024-04-16", true, new ArrayList<DateRange>());         
+                        "Larisa", 200, "penthouse", "2024-04-10", "2024-04-16", true, new ArrayList<DateRange>());         
                 input = in;
                 new ConsoleApp(room1).start();
                 new ConsoleApp(room2).start();

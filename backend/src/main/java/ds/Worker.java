@@ -255,6 +255,9 @@ public class Worker
     // Gives reviews
     private synchronized boolean giveReview(Review review) {
         boolean roomFound = false;
+        if(review.getReview() < 0 || review.getReview() > 5) {                  // check if review is out of bounds
+            return roomFound;
+        }
         for (Room room : rooms) {
             if (room.getRoomName().equals(review.getRoomForReview())) {         // find the room which has the given name
                 int numberof = room.getReviews() + 1;                           // increase no of reviews
@@ -392,7 +395,7 @@ public class Worker
             sendHttpResponse(out, 200, "OK", "{\"message\":\"Review added\"}"
                         , "application/json");                                              // send response for succesfull http request
         }else{
-            sendHttpResponse(out, 404, "Not Found", "{\"message\":\"No such room\"}", 
+            sendHttpResponse(out, 404, "Not Found", "{\"message\":\"Review out of bounds!\"}", 
             "application/json"); 
         }
     }    
