@@ -3,7 +3,7 @@
 A room rental service in the style of Airbnb, built for the Distributed Systems
 course (3664) at Athens University of Economics and Business, March 2024.
 
-Three-person project. I wrote most of the backend and the client interface.
+Three-person project.
 
 ## Architecture
 
